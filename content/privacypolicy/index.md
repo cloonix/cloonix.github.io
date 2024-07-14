@@ -8,9 +8,7 @@ weight: 4
 
 ## Who we are
 
-This blog is run by Claus Malter and can be reached via the [Imprint]({{< ref "/imprint" >}})
-
-All further information can be found in the imprint.
+This blog is run by Claus Malter. All further information can be found in the [Imprint]({{< ref "/imprint" >}})
 
 ## Cookies
 
