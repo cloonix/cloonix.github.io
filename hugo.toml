@@ -1,4 +1,4 @@
-baseURL = "http://localhost"
+baseURL = "https://blog.cmmx.de"
 theme = "hugo-bearcub"
 copyright = "Claus Malter"
 defaultContentLanguage = "en"
