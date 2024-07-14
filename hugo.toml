@@ -85,3 +85,7 @@ enableRobotsTXT = true
   [params.author]
     name = "Claus Malter" # Your name as shown in the RSS feed metadata
     email = "blog@cmmx.de" # Added to the footer so readers can reply to posts
+
+  [module]
+    [[module.imports]]
+      path = "github.com/clente/hugo-bearcub"
