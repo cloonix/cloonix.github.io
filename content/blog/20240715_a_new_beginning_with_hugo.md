@@ -89,7 +89,7 @@ hugo server -D
 
 You can visit your newly created site at <http://localhost:1313/>. You can vscode or ssh to tunnel your browser to this port. Changing the site will automatically refresh your browser, which makes it very convenient to develop a Hugo site.  
 
-Create a new content with:
+Create new content / page with:
 
 ```sh
 hugo new content content/posts/my-first-post.md
