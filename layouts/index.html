@@ -8,7 +8,9 @@
   {{ end }}
 
   <h3>Tags</h3>
+  <small>
   {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
     <a href="{{ "/tags/" | relLangURL }}{{ $name | urlize }}">#{{ $name }}</a> 
   {{ end }}
+  </small>
 {{ end }}
