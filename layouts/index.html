@@ -1,0 +1,14 @@
+{{ define "main" }}
+{{ .Content }}
+
+  <h3>Recent blog posts</h3>
+  {{ range  ( where .Site.RegularPages "Type" "blog" ) }}
+    <small>{{ .Date.Format (default "2006-01-02" .Site.Params.dateFormat) }} </small>
+    <a href="{{ .Permalink }}">{{ .Title }}</a>
+  {{ end }}
+
+  <h3>Tags</h3>
+  {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
+    <a href="{{ "/tags/" | relLangURL }}{{ $name | urlize }}">#{{ $name }}</a> 
+  {{ end }}
+{{ end }}

@@ -4,7 +4,7 @@ menu: "main"
 weight: 3
 ---
 
-# About Me
+## About Me
 
 Claus Malter advises small and medium-sized companies as well as private customers in and around Munich. His range of services includes project management, design and realisation of technical solutions. His focus is on customised, comprehensible and always high-quality solutions. He works as a freelancer on a part-time basis and is therefore independent of customer orders and manufacturers.
 

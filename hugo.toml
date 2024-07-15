@@ -3,6 +3,8 @@ theme = "hugo-bearcub"
 copyright = "Claus Malter"
 defaultContentLanguage = "en"
 
+enableEmoji = true
+
 # Generate a nice robots.txt for SEO
 enableRobotsTXT = true
 
@@ -27,7 +29,7 @@ enableRobotsTXT = true
     LanguageCode = "en-US"
     contentDir = "content"
     [languages.en.params]
-      madeWith = "Made with [Bear Cub](https://github.com/clente/hugo-bearcub)"
+      madeWith = "Made with [Bear Cub](https://github.com/clente/hugo-bearcub), [Hugo](https://gohugo.io) and ❤️"
 #  [languages.de]
 #    title = "Claus' Geektech Blog"
 #    languageName = "de-DE"
@@ -38,7 +40,7 @@ enableRobotsTXT = true
 
 [params]
   # The description of your website
-  description = "Bear Cub Demo"
+  description = "Blog based on Hugo SSG and Github pages"
 
   # The path to your favicon
   favicon = "images/favicon.png"
@@ -84,4 +86,7 @@ enableRobotsTXT = true
   # link by using a `hideReply` param in front matter.
   [params.author]
     name = "Claus Malter" # Your name as shown in the RSS feed metadata
-    email = "blog@cmmx.de" # Added to the footer so readers can reply to posts
+
+  [taxonomies]
+    category = 'categories'
+    tag = 'tags'
