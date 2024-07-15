@@ -90,3 +90,4 @@ enableRobotsTXT = true
   [taxonomies]
     category = 'categories'
     tag = 'tags'
+    series = 'series' 
