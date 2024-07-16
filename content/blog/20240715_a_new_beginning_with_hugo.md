@@ -5,6 +5,7 @@ author = 'Claus Malter'
 tags = ['hugo', 'linux', 'development', 'howto', 'markdown']
 categories = ['howto']
 series = ['hugo']
+toc = 1
 +++
 
 While installing and building a site with Hugo is not rocket science, I wanted to share some notes on my first steps. Maybe this will become a series.

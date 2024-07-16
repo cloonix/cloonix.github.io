@@ -1,8 +1,9 @@
 title = "Claus' Geektech Blog"
 baseURL = "https://blog.cmmx.de"
 theme = "MinIndie"
+timeZone = "Europe/Berlin"
 copyright = "Claus Malter"
-defaultContentLanguage = "en"
+languageCode = "en-us"
 
 enableEmoji = true
 enableRobotsTXT = true
@@ -12,6 +13,10 @@ summaryLength = 40
 # why you'd want to avoid inline styles, see
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src#unsafe_inline_styles
 [markup]
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 4
+    ordered = false
   [markup.highlight]
     lineNos = false
     lineNumbersInTable = false
@@ -26,6 +31,9 @@ summaryLength = 40
   title = "Claus' Geektech Blog"
   subtitle = "Made with Hugo and ❤️"
   dateFormat = "2006-01-02"
+
+  [permalinks]
+    blog = "/:year/:month/:day/:title/"
 
   [params.social]
     mastodon = "cloonix@chaos.soical"
@@ -93,3 +101,8 @@ summaryLength = 40
         name = "Privacy Policy"
         url = "/privacypolicy"
         weight = 4
+
+    [[menu.footer]]
+        name = "Theme by bacardi55"
+        url = "https://git.sr.ht/~bacardi55/MinIndie"
+        weight = 5
