@@ -7,8 +7,6 @@ categories = ['howto']
 series = ['hugo']
 +++
 
-## My first steps with Hugo
-
 While installing and building a site with Hugo is not rocket science, I wanted to share some notes on my first steps. Maybe this will become a series.
 
 You need 5 things before you can run Hugo. In my trials, brew.sh was the easiest way to install the prerequisites on Linux.  
