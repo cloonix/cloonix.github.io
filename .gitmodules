@@ -4,3 +4,6 @@
 [submodule "themes/MinIndie"]
 	path = themes/MinIndie
 	url = https://git.sr.ht/~bacardi55/MinIndie
+[submodule "themes/hugo-cloonix"]
+	path = themes/hugo-cloonix
+	url = https://github.com/cloonix/hugo-cloonix

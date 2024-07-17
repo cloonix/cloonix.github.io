@@ -1,6 +1,6 @@
 title = "Claus' Geektech Blog"
 baseURL = "https://blog.cmmx.de"
-theme = "MinIndie"
+theme = "hugo-cloonix"
 timeZone = "Europe/Berlin"
 copyright = "2024 Claus Malter"
 languageCode = "en-us"
