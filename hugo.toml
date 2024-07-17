@@ -1,4 +1,4 @@
-title = "Claus' Geektech Blog"
+title = "Claus' Blog"
 baseURL = "https://blog.cmmx.de"
 theme = "hugo-cloonix"
 timeZone = "Europe/Berlin"
@@ -28,15 +28,11 @@ summaryLength = 40
 [params]
   description = "Blog based on Hugo SSG and Github pages"
   favicon = "images/favicon.png"
-  title = "Claus' Geektech Blog"
   subtitle = "Made with Hugo and ❤️"
   dateFormat = "2006-01-02"
 
   [permalinks]
     blog = "/:year/:month/:day/:title/"
-
-  [params.social]
-    mastodon = "cloonix@chaos.soical"
 
   [params.author]
     name = "Claus Malter" # Your name as shown in the RSS feed metadata
@@ -101,8 +97,3 @@ summaryLength = 40
         name = "Privacy Policy"
         url = "/privacypolicy"
         weight = 4
-
-    [[menu.footer]]
-        name = "Theme by bacardi55"
-        url = "https://git.sr.ht/~bacardi55/MinIndie"
-        weight = 5
