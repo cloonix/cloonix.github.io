@@ -2,7 +2,7 @@ title = "Claus' Geektech Blog"
 baseURL = "https://blog.cmmx.de"
 theme = "MinIndie"
 timeZone = "Europe/Berlin"
-copyright = "Claus Malter"
+copyright = "2024 Claus Malter"
 languageCode = "en-us"
 
 enableEmoji = true
@@ -15,7 +15,7 @@ summaryLength = 40
 [markup]
   [markup.tableOfContents]
     startLevel = 2
-    endLevel = 4
+    endLevel = 2
     ordered = false
   [markup.highlight]
     lineNos = false
