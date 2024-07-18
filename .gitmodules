@@ -1,4 +1,4 @@
 [submodule "themes/smol"]
 	path = themes/smol
-	url = https://github.com/cloonix/smol
+	url = https://github.com/cloonix/smol.git
   branch = main
