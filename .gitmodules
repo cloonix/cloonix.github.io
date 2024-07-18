@@ -1,9 +1,3 @@
-[submodule "themes/hugo-bearcub"]
-	path = themes/hugo-bearcub
-	url = https://github.com/clente/hugo-bearcub.git
-[submodule "themes/MinIndie"]
-	path = themes/MinIndie
-	url = https://git.sr.ht/~bacardi55/MinIndie
-[submodule "smol"]
-	path = smol
-	url = https://github.com/cloonix/smol.git
+[submodule "themes/smol"]
+	path = themes/smol
+	url = https://github.com/cloonix/smol
