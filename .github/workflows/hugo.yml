@@ -55,7 +55,7 @@ jobs:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
         run: |
-          git submodule update --remote --merge --allow-unrelated-histories \
+          git submodule update --remote --merge \
           && hugo \
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
