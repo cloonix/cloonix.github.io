@@ -35,7 +35,7 @@ cd ~
 mkdir tmp
 cd tmp
 wget https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
-tar xzf go1.22.2.linux-amd64.tar.gz
+tar xzf go1.22.2.linux-amd64.tar.gz ~/go
 echo 'export PATH=$PATH:~/go/bin' >> ~/.profile
 source ~/.profile
 ```
