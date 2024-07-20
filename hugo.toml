@@ -1,6 +1,7 @@
 title = "Claus' Blog"
 baseURL = "https://blog.cmmx.de"
 timeZone = "Europe/Berlin"
+theme = "smol"
 copyright = "Claus Malter"
 languageCode = "en-us"
 
@@ -23,10 +24,6 @@ summaryLength = 40
     # to people with poor eyesight. For more information about color contrast
     # and accessibility, see https://web.dev/color-and-contrast-accessibility/
     noClasses = false
-
-[module]
-  [[module.imports]]
-    path = "github.com/cloonix/smol"
 
 [params]
   description = "Blog based on Hugo SSG and Github pages"
