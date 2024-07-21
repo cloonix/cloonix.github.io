@@ -3,7 +3,6 @@ title = 'Working with Hugo Themes (Part 2)'
 tags = ['hugo', 'git', 'howto', 'development', 'go' ]
 categories = ['howto']
 date = 2024-07-20T17:52:47Z
-draft = true
 +++
 
 I was not happy with my local development workflow, which I described a few days ago [[1]]({{< ref "#links" >}}), for one reason: The git submodule was inconvenient. After editing and testing my theme, I still had to push the new submodule reference to github, where the github actions workflow would build and deploy the new theme.  
