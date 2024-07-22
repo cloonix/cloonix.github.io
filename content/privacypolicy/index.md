@@ -10,10 +10,6 @@ This blog is run by Claus Malter. All further information can be found in the [I
 
 This site does not use cookies.
 
-## Local Storage
-
-This website uses the browser's LocalStorage function to save the dark mode setting. This is only used when a user clicks on the Dark Mode button. No data is stored in the database.
-
 ## Embedded content from other websites
 
 Posts on this website may contain embedded content (e.g. videos, images, posts, etc.). Embedded content from other websites behaves exactly as if the visitor had visited the other website.
