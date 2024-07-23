@@ -76,6 +76,12 @@ summaryLength = 40
         url = "/aboutme/"
         weight = 5
 
+  [[menu.main]]
+        identifier = "buymeacoffee"
+        name = "🍺 Buy me a beer"
+        url = "https://buymeacoffee.com/cloonix"
+        weight = 6
+
   ## Footer
   [[menu.footer]]
         name = "Github"
