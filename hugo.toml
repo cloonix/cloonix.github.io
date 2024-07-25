@@ -78,7 +78,7 @@ summaryLength = 40
 
   [[menu.main]]
         identifier = "buymeacoffee"
-        name = "🍺 Buy me a beer"
+        name = "🍺Buy me a beer"
         url = "https://buymeacoffee.com/cloonix"
         weight = 6
 
