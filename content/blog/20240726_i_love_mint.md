@@ -15,6 +15,8 @@ In my opinion, Mint [[2]](https://www.linuxmint.com/) is the Windows killer if y
 
 Yes, I'm a person who thinks Vim is the best text editor, so my opinion may not suit all PC users who have been running Windows. But if you want a chance to convince someone to use Linux, it's Mint.  
 
+Update: The upgrade from 21.3 to 22.0 took a long time, but it worked flawless. No issues at all. I'm excited.  
+
 ## Links {#links}
 
 [1] <https://en.wikipedia.org/wiki/Expanded_memory>  
