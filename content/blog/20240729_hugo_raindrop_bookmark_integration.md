@@ -1,10 +1,11 @@
 +++
 title = 'Writing a Hugo Raindrop.io bookmark integration with AI'
-date = 2024-07-27T17:11:47Z
+date = 2024-07-29T17:11:47Z
 draft = true
 tags = [ 'python', 'bookmarks', 'howto', 'blog', 'personal' ]
 categories = [ 'howto' ]
 toc = 1
+featured = 1
 [params]
   author = 'Claus Malter'
 +++
@@ -120,6 +121,32 @@ tags = {tags}
 print("Bookmark generation completed.")
 ```
 
+## The Theme - The hardest part
+
+I wasn't expecting that: Customising the theme was the part that took the most time. Not that it was complicated or anything. A change here, a change there... Made me understand the core of Hugo a bit more. So I'm ok. But for this blog post it's too much to point out all the points. So in a nutshell, that's what I did:
+
+1. I added a section named `content/bookmarks`.  
+2. I added a menu item in my `config.toml`
+3. I added a small section on the mainpage for the last 5 bookmarks. For that I added this code:
+
+```html
+<h3>🔗 Recent bookmarks</h3>
+<ul>
+    {{ range first 5 (where site.RegularPages "Section" "bookmarks") }}
+    <li>
+        <div class="post-title">
+            <time>{{ .Date.Format "2006-01-02" }}</time> 
+            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+    </li>
+    </div>
+    {{ end }}
+</ul>
+```
+
+## Automation
+
+I was thinking: "How can i make it automatic, but as easy as possible?". 
+
 ## Links
 
-https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/
+<https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/>  
