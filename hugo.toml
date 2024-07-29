@@ -24,11 +24,17 @@ summaryLength = 40
   [[module.imports]]
     path = "github.com/cloonix/smol"
 
+[pagination]
+  disableAliases = false
+  pagerSize = 3
+  path = 'page'
+
 [params]
   description = "Blog based on Hugo SSG and Github pages"
   favicon = "images/favicon.png"
   subtitle = "Made with Hugo and ❤️"
   dateFormat = "2006-01-02"
+  mainSections = ['blog' ]
 
   [permalinks]
     blog = "/:year/:month/:day/:title/"
@@ -50,37 +56,43 @@ summaryLength = 40
         identifier = "home"
         name = "🏠Home"
         url = "/"
-        weight = 1
+        weight = 10
 
   [[menu.main]]
         identifier = "blog"
         name = "📰Blog"
         url = "/blog/"
-        weight = 2
+        weight = 20
+
+  [[menu.main]]
+        identifier = "bookmark"
+        name = "🔗Bookmarks"
+        url = "/bookmarks/"
+        weight = 25
 
   [[menu.main]]
         identifier = "categories"
         name = "🗃️Categories"
         url = "/categories/"
-        weight = 3
+        weight = 30
 
   [[menu.main]]
         identifier = "tags"
         name = "🏷️Tags"
         url = "/tags/"
-        weight = 4
+        weight = 40
 
   [[menu.main]]
         identifier = "aboutme"
         name = "🙎🏻‍♂️About Me"
         url = "/aboutme/"
-        weight = 5
+        weight = 50
 
   [[menu.main]]
         identifier = "buymeacoffee"
         name = "🍺Buy me a beer"
         url = "https://buymeacoffee.com/cloonix"
-        weight = 6
+        weight = 60
 
   ## Footer
   [[menu.footer]]

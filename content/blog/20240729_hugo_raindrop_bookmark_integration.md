@@ -40,7 +40,7 @@ I used the following prompt to generate the Python script with GitHub Copilot. I
 # +++
 # title = <title>
 # date = <bookmark creation date>
-# categories: [ 'bookmarks' ]
+# categories = [ 'bookmarks' ]
 # +++
 # 
 # <note>
@@ -87,6 +87,7 @@ for bookmark in bookmarks:
     link = bookmark.get("link")
     excerpt = bookmark.get("excerpt")
     note = bookmark.get("note")
+    tags = bookmark.get("tags")
     created_timestamp = int(datetime.fromisoformat(bookmark.get("created")).timestamp())
     creation_date = datetime.fromtimestamp(created_timestamp)
 
@@ -101,7 +102,8 @@ for bookmark in bookmarks:
     markdown_content = f"""+++
 title = "{bookmark.get('title')}"
 date = "{creation_date}"
-categories: [ 'bookmarks' ]
+categories = [ 'bookmarks' ]
+tags = {tags}
 +++
 
 {note}
