@@ -2,6 +2,14 @@ import os
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+import subprocess
+
+# Change directory to the script's folder
+script_folder = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_folder)
+
+# Execute git pull command
+subprocess.run(["git", "pull"])
 
 # Load environment variables from .env file
 load_dotenv()
@@ -61,3 +69,8 @@ tags = {tags}
         file.write(markdown_content)
 
 print("Bookmark generation completed.")
+
+# Execute shell commands to add, commit, and push changes to git repository
+subprocess.run(["git", "add", "./content/bookmarks"])
+subprocess.run(["git", "commit", "-m", "updated raindrop bookmarks"])
+subprocess.run(["git", "push"])
