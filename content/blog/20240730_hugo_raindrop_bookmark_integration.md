@@ -179,4 +179,4 @@ This is not a step-by-step howto. More a diary of that kinda simple integration 
 ## Links
 
 [1] <https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/>  
-[2] <https://www.google.com/search?q=github+deployment+keys+&sourceid=chrome&ie=UTF-8>  
+[2] <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys>
