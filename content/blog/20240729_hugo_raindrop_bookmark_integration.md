@@ -10,19 +10,18 @@ featured = 1
   author = 'Claus Malter'
 +++
 
-[bacardi55](https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/) has an interesting bookmarks section on his blog, where a script generates Hugo markdown pages for bookmarks he has added to a central (self-hosted) bookmark manager. I found this very interesting and wanted to build something similar. I've been using raindrop.io for some time now, and this service also provides an API. So this could be an easy project to do with the help of Github Copilot, which I have recently been using to give my software development projects a boost.  
+[bacardi55](https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/) [1] has an interesting bookmarks section on his blog, where a script generates Hugo markdown pages for bookmarks he has added to a central (self-hosted) bookmark manager. I found this very interesting and wanted to build something similar. I've been using [raindrop.io](https://raindrop.io) for some time now, and this service also provides an API. So this could be an easy project to do with the help of Github Copilot, which I have recently been using to give my software development projects a boost.  
 
 So here are my goals:
 
 1. Generate Hugo Markdown content using the Raindrop.io API (link and note)
 2. Use only bookmarks from a specific publicly shared collection
 3. A new section on my blog, only for bookmarks
-4. Execution of the script on demand
-5. Use python
-6. Use Github Copilot for creating the python script
-7. (future goal) Integrate the script into github's deployment action
+4. Use python
+5. Use Github Copilot for creating the python script
+6. Find a way to automate the update of the GitHub pages  
 
-There was one step in the workflow that I was not sure how to do: I don't want to manually deploy my pages every time I bookmark a page. Ideally, saving a bookmark would execute a web-hook, but Raindrop.io does not support this. So the alternative is to run a script on my server that fetches new bookmarks, generates the markdown files and pushes them to Github pages. But for now I will do it the manual way and decide later how4 improve it.  
+There was one step in the workflow that I was not sure how to do: I don't want to manually deploy my pages every time I bookmark a page. Ideally, saving a bookmark would execute a web-hook, but Raindrop.io does not support this. So the alternative is to run a script on my server that fetches new bookmarks, generates the markdown files and pushes them to Github pages. But for now I will do it the manual way and decide later how improve it.  
 
 ## The AI guided script generation
 
@@ -123,7 +122,7 @@ print("Bookmark generation completed.")
 
 ## The Theme - The hardest part
 
-I wasn't expecting that: Customising the theme was the part that took the most time. Not that it was complicated or anything. A change here, a change there... Made me understand the core of Hugo a bit more. So I'm ok. But for this blog post it's too much to point out all the points. So in a nutshell, that's what I did:
+I wasn't expecting that: Customising the theme was the part that took the most time. Not that it was complicated or anything. A change here, a change there... Made me understand the core of Hugo a bit more. So I'm ok. But for this blog post it's too much to point out all the changes. In a nutshell, that's what I did:
 
 1. I added a section named `content/bookmarks`.  
 2. I added a menu item in my `config.toml`
@@ -145,12 +144,12 @@ I wasn't expecting that: Customising the theme was the part that took the most t
 
 ## Automation
 
-I thought: "How can I make this automatic, but as simple as possible?" Since my deployment is through GitHub pages, this means that I always have to push my Markdown files through to GitHub repository. This also means I have to use the git client and do a pull/push for each bookmark update.  
+I thought: "How can I make this automatic, but as simple as possible?" Since my deployment is through GitHub pages, this means that I always have to push my Markdown files to my GitHub repository. This also means I have to use the git client and do a pull/push for each bookmark update.  
 
-So I need a computer to fetch my repository, run the python script on the local repository, git commit/push the changes to GitHub. To do this, I also need access to GitHub via a password-less SSH deployment key. A deployment key can be explicitly added to a single repository and only allow access to that repository.  
+So I need a computer to fetch my repository, run the python script on the local repository, git commit/push the changes to GitHub. To do this, I also need access to GitHub via a password-less SSH deployment key [2]. A deployment key can be explicitly added to a single repository and only allow access to that repository.  
 
 1. Adding my python script to the repository
-2. Generate a ssh-key (w/o password): `ssh-keygen -t ed25519 -C "your_email@example.com" ./deploy_key`
+2. Generate a ssh-key (w/o password): `ssh-keygen -t ed25519 -C "your_email@example.com" ./deploy_key` and added the public key to the Deployment section of my repository
 3. Added an entry to my `~/.ssh/config` to use the new ssh key for that GitHub repository:
 
     ```sh
@@ -164,14 +163,21 @@ So I need a computer to fetch my repository, run the python script on the local 
 4. Clone the repository only for the bookmark creation workflow: `git clone git@blog:cloonix/cloonix.github.io ./bookmark-update`
 5. Running a script through crontab:  
 
-```sh
-git pull
-python3 raindrop_bookmarks.py
-git add ./content/bookmarks
-git commit -m "updated raindrop bookmarks"
-git push
-```
+    ```sh
+    git pull
+    python3 raindrop_bookmarks.py
+    git add ./content/bookmarks
+    git commit -m "updated raindrop bookmarks"
+    git push
+    ```
+
+6. Created a crontab to run the script.  
+
+## Conclusion
+
+This is not a step-by-step howto. More a diary of that kinda simple integration of the Raindrop API into my Hugo Github Pages deployment. But i achieved my goal: The crontab is running every how, which is more than enough, and fetches new bookmarks from my public bookmark collection. It generates the Markdown files and pushes them to Github where Actions deploy the static site.
 
 ## Links
 
-<https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/>  
+[1] <https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/>  
+[2] <https://www.google.com/search?q=github+deployment+keys+&sourceid=chrome&ie=UTF-8>  
