@@ -55,6 +55,7 @@ title = "{bookmark.get('title')}"
 date = "{creation_date}"
 categories = [ 'bookmarks' ]
 tags = {tags}
+type = "bookmark"
 +++
 
 {note}
