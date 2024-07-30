@@ -145,7 +145,32 @@ I wasn't expecting that: Customising the theme was the part that took the most t
 
 ## Automation
 
-I was thinking: "How can i make it automatic, but as easy as possible?". 
+I thought: "How can I make this automatic, but as simple as possible?" Since my deployment is through GitHub pages, this means that I always have to push my Markdown files through to GitHub repository. This also means I have to use the git client and do a pull/push for each bookmark update.  
+
+So I need a computer to fetch my repository, run the python script on the local repository, git commit/push the changes to GitHub. To do this, I also need access to GitHub via a password-less SSH deployment key. A deployment key can be explicitly added to a single repository and only allow access to that repository.  
+
+1. Adding my python script to the repository
+2. Generate a ssh-key (w/o password): `ssh-keygen -t ed25519 -C "your_email@example.com" ./deploy_key`
+3. Added an entry to my `~/.ssh/config` to use the new ssh key for that GitHub repository:
+
+    ```sh
+    Host blog
+        Hostname github.com
+        IdentityFile ~/.ssh/git_deploy_key
+        IdentitiesOnly yes 
+        AddKeysToAgent yes
+    ```
+
+4. Clone the repository only for the bookmark creation workflow: `git clone git@blog:cloonix/cloonix.github.io ./bookmark-update`
+5. Running a script through crontab:  
+
+```sh
+git pull
+python3 raindrop_bookmarks.py
+git add ./content/bookmarks
+git commit -m "updated raindrop bookmarks"
+git push
+```
 
 ## Links
 
