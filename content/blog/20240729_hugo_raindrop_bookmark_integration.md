@@ -1,7 +1,6 @@
 +++
 title = 'Writing a Hugo Raindrop.io bookmark integration with AI'
 date = 2024-07-29T17:11:47Z
-draft = true
 tags = [ 'python', 'bookmarks', 'howto', 'blog', 'personal' ]
 categories = [ 'howto' ]
 toc = 1
