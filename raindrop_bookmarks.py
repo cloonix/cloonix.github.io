@@ -22,7 +22,7 @@ if not api_key or not collection_id or not endpoint:
     print("Please set the environment variables")
     exit(1)
 
-# Get the last 5 bookmarks from the API endpoint
+# Get the last 10 bookmarks from the API endpoint
 url = f"{endpoint}/{collection_id}?perpage=10&sort=-created"
 headers = {"Authorization": f"Bearer {api_key}"}
 response = requests.get(url, headers=headers)
