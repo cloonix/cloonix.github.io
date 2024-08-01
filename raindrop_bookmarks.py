@@ -23,7 +23,7 @@ if not api_key or not collection_id or not endpoint:
     exit(1)
 
 # Get the last 5 bookmarks from the API endpoint
-url = f"{endpoint}/{collection_id}?perpage=5"
+url = f"{endpoint}/{collection_id}?perpage=10&sort=-created"
 headers = {"Authorization": f"Bearer {api_key}"}
 response = requests.get(url, headers=headers)
 
@@ -44,10 +44,6 @@ for bookmark in bookmarks:
 
     # Generate the markdown file path
     file_name = f"content/bookmarks/bookmark-{creation_date.strftime('%Y%m%d')}.md"
-
-    # Check if the markdown file already exists
-    if os.path.exists(file_name):
-        continue
 
     # Generate the markdown content
     markdown_content = f"""+++
