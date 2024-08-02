@@ -54,11 +54,11 @@ tags = {tags}
 type = "bookmark"
 +++
 
-{note}
+{note}  
 
-{link}
+<{link}>  
 
-{excerpt}
+{excerpt}  
 """
 
     # Write the markdown content to the file
