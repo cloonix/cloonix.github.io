@@ -3,6 +3,8 @@ title = 'Working with Hugo Themes (Part 1)'
 date = 2024-07-17T18:32:58Z
 tags = ['hugo', 'git', 'howto', 'development' ]
 categories = ['howto']
+type = "blog"
+series = ['hugo']
 +++
 
 I'm the kind of person who cares a lot about having a good looking theme for my blog before I even start creating content.  

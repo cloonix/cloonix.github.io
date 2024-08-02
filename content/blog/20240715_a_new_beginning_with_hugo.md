@@ -4,6 +4,7 @@ date = 2024-07-15T18:30:00Z
 author = 'Claus Malter'
 tags = ['hugo', 'linux', 'development', 'howto', 'markdown']
 categories = ['howto']
+type = "blog"
 series = ['hugo']
 toc = 1
 +++

@@ -3,6 +3,7 @@ title = 'I love Linux Mint'
 date = 2024-07-26T08:05:06Z
 tags = [ 'linux', 'mint', 'ubuntu', 'opinion' ]
 categories = [ 'personal', 'opinion' ]
+type = "blog"
 +++
 
 Actually, I've been using Linux since SUSE 6.0 in 1998. My mother was a technical writer and one day she came home from work with a SUSE installation CD-ROM and manual. It was a completely new chapter for me, even though I had used a SINIX PC back in 1987. But only for playing Snake and typing random letters. You can guess how old I was :wink: I only used DOS/Windows to play games. The hardest part was creating boot disks for The Settlers to increase the EMS/XMS [[1]](https://en.wikipedia.org/wiki/Expanded_memory).
