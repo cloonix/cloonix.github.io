@@ -5,6 +5,7 @@ tags = [ 'games', 'autohotkey', 'script' , 'autohotkey' ]
 categories = [ 'howto' ]
 type = "blog"
 toc = 1
+featured = 1
 +++
 
 I have been playing Geforce Now for the past two years and I absolutely love it. The convenience of being able to stream my favorite games without the need for high-end hardware has been a game-changer for me. Although i just bought a 4070 Ti. Right now it was a bad investment.  
