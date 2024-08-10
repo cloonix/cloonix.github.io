@@ -77,10 +77,16 @@ summaryLength = 40
         weight = 30
 
   [[menu.main]]
-        identifier = "tags"
-        name = "🏷️Tags"
-        url = "/tags/"
-        weight = 40
+        identifier = "rss"
+        name = "📢RSS"
+        url = "/index.xml#feed"
+        weight = 30
+
+ # [[menu.main]]
+ #       identifier = "tags"
+ #       name = "🏷️Tags"
+ #       url = "/tags/"
+ #       weight = 40
 
   [[menu.main]]
         identifier = "aboutme"
