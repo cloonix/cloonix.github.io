@@ -1,6 +1,6 @@
 +++
 title = 'Working with Hugo (Part 3): Images'
-date = 2024-08-15T18:32:58Z
+date = 2024-08-15T17:32:58Z
 tags = ['hugo', 'git', 'howto', 'development' ]
 categories = ['howto']
 type = "blog"
