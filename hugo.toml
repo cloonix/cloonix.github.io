@@ -8,16 +8,13 @@ enableEmoji = true
 enableRobotsTXT = true
 summaryLength = 40
 
-# Setup syntax highlighting without inline styles. For more information about
-# why you'd want to avoid inline styles, see
-# https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src#unsafe_inline_styles
 [markup]
   [markup.tableOfContents]
     startLevel = 2
     endLevel = 2
     ordered = false
   [markup.highlight]
-    lineNos = true
+    linenos = true
     lineNumbersInTable = false
 
 [module]
