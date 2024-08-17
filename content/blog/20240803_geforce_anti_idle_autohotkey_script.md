@@ -5,13 +5,14 @@ tags = [ 'games', 'autohotkey', 'script' , 'autohotkey' ]
 categories = [ 'howto' ]
 type = "blog"
 toc = 1
+featured = 1
 +++
 
 I have been playing Geforce Now for the past two years and I absolutely love it. The convenience of being able to stream my favorite games without the need for high-end hardware has been a game-changer for me. Although i just bought a 4070 Ti. Right now it was a bad investment.  
 
 But as much as I enjoy playing on Geforce Now, I sometimes encounter the issue of idle disconnects. To address this, I have created an Autohotkey script that keeps my session active even during periods of inactivity. For that my script switches back to the Geforce Windows and moves the mouse a bit. Whatever I was doing at that moment. For example: I'm looking up something on the Internet (about the game) or I reply to a text message. I forget about time and suddenly my game session got disconnected. Which could be very annoying if my game wasn't saved recently. This happens after a few minutes, 7 or 8 minutes it was, I guess.  
 
-For those of you, who don't know AutoHotkey here a small summary from ChatGPT :wink:
+For those of you, who don't know AutoHotkey here is a small summary from ChatGPT :wink:
 
 * Autohotkey is a scripting language that allows you to automate tasks and create hotkeys for various actions on your computer.
 * It provides a simple syntax and a wide range of built-in functions, making it easy to write scripts for automating repetitive tasks or customizing your workflow.
