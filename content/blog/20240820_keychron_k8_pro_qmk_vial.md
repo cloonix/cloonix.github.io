@@ -1,6 +1,6 @@
 ---
 title: "Keychron K8 Pro with vial-qmk support"
-date: 2024-08-20T09:01:20Z
+date: 2024-08-17T17:01:20Z
 type: blog
 draft: true
 categories:
@@ -11,6 +11,8 @@ tags:
   - keyboard
   - qmk
   - vial
+  - github
+  - bluetooth
 series:
   - keychron
 ---
@@ -29,25 +31,35 @@ One note at that point: The code of that branch is 8 months old. But qmk and via
 
 I forked the code from adophoxia and only fetched the bluetooth branch [[5](https://github.com/adophoxia/vial-qmk/tree/keychron-bluetooth-PR)]. You can find the original link in the Link section at the end.  
 
-I assuming an Ubuntu 24.x operating system:  
+I assume you are using an Ubuntu 24.x operating system. To compile the default vial firmware, follow these steps:
 
 ```sh
 sudo apt install -y python3-pip pipx
 pipx install qmk
 cd ~/git
 git clone https://github.com/cloonix/vial-qmk.git
-git clone https://github.com/cloonix/vial-qmk-keymap.git
 cd vial-qmk
 git checkout bluetooth
-export PATH=$PATH:/home/cloonix/.local/bin
+export PATH=$PATH:/home/user/.local/bin # qmk binary
 qmk setup
+make keychron/k8_pro/iso/rgb:vial
+```
+
+If you want to start with my personal build, which is definitely a good blueprint, you can clone and compile my custom keymap:
+
+```sh
+git clone https://github.com/cloonix/vial-qmk-keymap.git
 cd keyboards/keychron/k8_pro/iso/rgb/keymaps
 ln -s ~/git/vial-qmk-keymap cloonix
 cd ~/git/vial-qmk
 make keychron/k8_pro/iso/rgb:cloonix
 ```
 
-The resulting firmware you usually flash with the QMK Toolbox [[6](https://github.com/qmk/qmk_toolbox)]
+The resulting firmware (e.g. `keychron_k8_pro_iso_rgb_vial.bin`) you usually flash with the QMK Toolbox [[6](https://github.com/qmk/qmk_toolbox)]
+
+## Conclusion
+
+If you are using a Keychron Pro or Max model, you may encounter difficulties when trying to use Vial as a configuration tool. This is because the QMK source code currently does not support Bluetooth for Keychron keyboards, which means there is no Vial support either. However, with my code fork (with bluetooth support) and added support for the K8 Pro ISO keymap, you can adapt it to your Pro model.
 
 ## Links
 
