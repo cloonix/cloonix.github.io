@@ -4,7 +4,7 @@ title: "About Me"
 
 Claus Malter advises small and medium-sized companies as well as private customers in and around Munich. His range of services includes project management, design and realisation of technical solutions. His focus is on customised, comprehensible and always high-quality solutions. He works as a freelancer on a part-time basis and is therefore independent of customer orders and manufacturers.
 
-He began his training at Siemens as an IT specialist for system integration, followed by a degree in business administration and mechanical engineering as a technical specialisation at the Technical University of Munich.
+He started his career at Siemens as an IT specialist for system integration, followed by a degree in business administration and mechanical engineering as a technical specialisation at the Technical University of Munich.
 
 In addition to the development of customised solutions, he also offers support in the introduction and adaptation of standard software. His broad range of professional and technical experience makes him adaptable and always open to new questions and solutions.
 

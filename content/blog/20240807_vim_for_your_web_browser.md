@@ -11,7 +11,7 @@ tags:
   - vim
 ---
 
-I'm still trying to improve my vim skills every day, but I'm still not faster than using a regular editor in combination with my mouse, but I'm trying. But what I really like is the browser extension [vimium](https://vimium.github.io/) which is available for Chromium and Firefox.  
+I'm trying to improve my vim skills every day, but I'm still not faster than using a regular editor in combination with my mouse. I really like the browser extension [vimium](https://vimium.github.io/) which is available for Chromium and Firefox.  
 
 The principle is simple. You press the "f" key, for example, and the open web page displays a selection of key combinations that (would) open the corresponding link. Then you type (for example) "ad" to open the underlying link.
 
