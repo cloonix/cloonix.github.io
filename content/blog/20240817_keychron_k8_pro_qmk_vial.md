@@ -2,7 +2,7 @@
 title: "Keychron K8 Pro with vial-qmk support"
 date: 2024-08-17T17:01:20Z
 type: blog
-draft: true
+featured: true
 categories:
   - howto
   - development
