@@ -64,7 +64,7 @@ But we are not finished yet.
 
 Hugo supports workspaces since version v0.109.0 [[2]]({{< ref "#links" >}}). You create a workspace file (e.g. `dev.work`) in your Hugo repository folder with this content:
 
-```file
+```sh
 go 1.22.2
 
 use .
