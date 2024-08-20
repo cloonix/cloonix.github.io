@@ -48,6 +48,7 @@ make keychron/k8_pro/iso/rgb:vial
 If you want to start with my personal build, which is definitely a good blueprint, you can clone and compile my custom keymap:
 
 ```sh
+cd ~/git
 git clone https://github.com/cloonix/vial-qmk-keymap.git
 cd keyboards/keychron/k8_pro/iso/rgb/keymaps
 ln -s ~/git/vial-qmk-keymap cloonix
