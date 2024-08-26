@@ -51,49 +51,49 @@ summaryLength = 40
 [menu]
   [[menu.main]]
         identifier = "home"
-        name = "🏠Home"
+        name = "🏠 Home"
         url = "/"
         weight = 10
 
   [[menu.main]]
         identifier = "blog"
-        name = "📰Blog"
+        name = "📰 Blog"
         url = "/blog/"
         weight = 20
 
   [[menu.main]]
         identifier = "bookmark"
-        name = "🔗Bookmarks"
+        name = "🔗 Bookmarks"
         url = "/bookmarks/"
         weight = 25
 
   [[menu.main]]
         identifier = "categories"
-        name = "🗃️Categories"
+        name = "🗃️ Categories"
         url = "/categories/"
         weight = 30
 
   [[menu.main]]
         identifier = "rss"
-        name = "📢RSS"
+        name = "📢 RSS"
         url = "/index.xml#feed"
         weight = 30
 
  # [[menu.main]]
  #       identifier = "tags"
- #       name = "🏷️Tags"
+ #       name = "🏷 ️Tags"
  #       url = "/tags/"
  #       weight = 40
 
   [[menu.main]]
         identifier = "aboutme"
-        name = "🙎🏻‍♂️About Me"
+        name = "🙎🏻‍♂️ About Me"
         url = "/aboutme/"
         weight = 50
 
   [[menu.main]]
         identifier = "buymeacoffee"
-        name = "🍺Buy me a beer"
+        name = "🍺 Buy me a beer"
         url = "https://buymeacoffee.com/cloonix"
         weight = 60
 
