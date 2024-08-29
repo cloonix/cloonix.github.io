@@ -2,7 +2,7 @@
 title: "logseq with syncthing and/or git"
 date: 2024-08-29T13:01:38Z
 type: blog
-draft: true
+draft: false
 categories:
   - Howto
 tags:
