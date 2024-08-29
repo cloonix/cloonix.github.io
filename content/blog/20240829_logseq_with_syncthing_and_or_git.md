@@ -17,7 +17,9 @@ Recently, I fell in love with [logseq](https://logseq.com/) [1]. At first glance
 
 For my use case, I couldn't see logseq as a competitor or replacement for [Obsidian](https://obsidian.md/) [2], but as a complement. In my opinion, logseq is perfect for collecting notes and linking them together. On the other hand, Obsidian is my tool of choice when it comes to collecting topic-specific documents, such as software-specific commands that make my life easier and that I need or forget frequently.
 
-Here are some interesting links that convinced me:
+Check this starter guide: <https://discuss.logseq.com/t/new-to-logseq-start-here/8468>
+
+Here are some more interesting links that convinced me:
 
 - [Get started with Logseq, my Daily Workflow](https://www.youtube.com/watch?v=uJclYLS4oHs)
 - [50 logseq tips: Beginner to Expert in 6 Minutes](https://www.youtube.com/watch?v=r_tcDooayOo)
