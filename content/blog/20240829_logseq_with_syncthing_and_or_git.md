@@ -37,6 +37,8 @@ This is why Charles Chiu uses pre- and post-commit git hooks, which must be set 
 
 With these git hooks and the function of logseq to automatically perform a commit (e.g. every 30 minutes or when the application is closed), the problem formulated at the beginning is reduced.  
 
+Update (2024-08-31): In my daily work with logseq with git/syncthing i think it's the best to only have a single system which performs the automatic commit/push to the repository. I had diverged branches a few times the last few days.  
+
 A pure synchronisation solution with git also has the advantage that you can really get it to work on all systems (including iOS/Android).  
 
 ## Why syncthing?
