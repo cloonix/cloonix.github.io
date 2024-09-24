@@ -19,7 +19,7 @@ So here is the initial situation. Three involved hosts:
 - Host B: Accessible via SSH (from Host A and C)
 - Host C: From this host you want to connect to Host A
 
-Host B serves as a kind of middleman and loops a tunnel from host C to host B:
+Host B serves as a kind of middleman and loops a tunnel from host C to host A:
 
 ⚠️ Use ssh keys on both sides (remote and local).
 
