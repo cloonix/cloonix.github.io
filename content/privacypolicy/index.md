@@ -1,5 +1,6 @@
 ---
 title: "Privacy Policy"
+date: 2024-07-15T18:30:00Z
 ---
 
 ## Who we are
