@@ -12,7 +12,7 @@ tags:
   - kopia
 ---
 
-I love backups. Most people who know me probably know that. And I love borgbackup [1]. I've been using borgbackup for many years and I still think it's the best backup tool in the open source world. And in my opinion it beats all commercial solutions as well, provided you have the technical know-how.
+I love backups. Most people who know me probably know that. And I love borgbackup [[1](https://www.borgbackup.org)]. I've been using borgbackup for many years and I still think it's the best backup tool in the open source world. And in my opinion it beats all commercial solutions as well, provided you have the technical know-how.
 
 BorgBackup, often referred to as borg, is a deduplicating backup program. It is designed to be efficient, secure, and versatile. Borg can:
 
@@ -24,7 +24,7 @@ BorgBackup, often referred to as borg, is a deduplicating backup program. It is 
 
 These features make borg an excellent choice for both personal and professional backup needs.
 
-But today it's about kopia [2].
+But today it's about kopia [[2](https://kopia.io)].
 
 ## What is kopia?
 
@@ -66,9 +66,9 @@ kopia snapshot create /Users/username/Obsidian
 kopia snapshot create /Users/username/Documents
 ```
 
-Since I'm ignoring identical snapshots in my global policy, you'll only see new snapshots if something has changed. 
+Since I'm ignoring identical snapshots in my global policy, you'll only see new snapshots if something has changed.
 
-Here are some useful commands. They are fairly self-explanatory. 
+Here are some useful commands. They are fairly self-explanatory.
 
 ```sh
 kopia policy get --global
@@ -79,7 +79,7 @@ kopia policy get /Users/username/Obsidian
 
 ## Restoring a Backup/Snapshot
 
-A backup that cannot be restored is useless. So always try to restore your backups from time to time. 
+A backup that cannot be restored is useless. So always try to restore your backups from time to time.
 
 Restoring a kopia backup is quite simple. Find the ID of your snapshot with `kopia snapshot list` and then restore it to a different directory (for testing):
 
@@ -87,17 +87,19 @@ Restoring a kopia backup is quite simple. Find the ID of your snapshot with `kop
 kopia restore 'kffbb7c28ea6c34d6cbe555d1cf80faa9' dest_restore
 ```
 
-It's a bit more convenient than borgbackup. 
+It's a bit more convenient than borgbackup.
+
+You can find the full documentation at <https://kopia.io/docs/getting-started/>
 
 ## Conclusion
 
-I like kopia and use it on my Windows machine to frequently back up my Obsidian vault. In the long run, I haven't tested it enough to make it a replacement for borg. Also, kopia is still under very active development. Breaking changes could happen. 
+I like kopia and use it on my Windows machine to frequently back up my Obsidian vault. In the long run, I haven't tested it enough to make it a replacement for borg. Also, kopia is still under very active development. Breaking changes could happen.
 
-However, if you ask me about my favorite backup solution(s), it's borg and kopia. 
+However, if you ask me about my favorite backup solution(s), it's borg and kopia.
 
 If you have a suggestion or a question, you can contact me via Mastodon or Matrix.
 
 ## Links
 
 [1] <https://www.borgbackup.org>  
-[2] <https://kopia.io>
+[2] <https://kopia.io>  
