@@ -13,7 +13,7 @@ tags:
   - autohotkey
 ---
 
-Many years ago, I think it was in the 20th century 😉, Gnome in Linux already had virtual desktops and I loved them. In Windows there was no built-in solution afair/afaik. Most of you know what virtual desktops are, so here is a quick explanation: Virtual desktops are a software feature that allows you to organize and manage multiple desktop environments on a single computer. Essentially, they allow you to create several separate "workspaces" or "virtual screens" that you can switch between, even though you're still using the same physical monitor(s).
+Many years ago, I think it was in the 20th century 😉, Gnome in Linux already had virtual desktops and I loved them. In Windows there was no built-in solution afair/afaik. Most of you know what virtual desktops are, so here is only a short explanation: Virtual desktops are a software feature that allows you to organize and manage multiple desktop environments on a single computer. Essentially, they allow you to create several separate "workspaces" or "virtual screens" that you can switch between, even though you're still using the same physical monitor(s).
 
 Today, every operating system has this feature, and you can easily switch between them with a keyboard shortcut. Except for Windows. You can cycle through your desktops with a shortcut, but you can't switch to a specific desktop, say desktop number 4. I usually have 3 to 4 workspaces, and on MacOS and Linux I use ALT+n to go to a specific workspace.
 
