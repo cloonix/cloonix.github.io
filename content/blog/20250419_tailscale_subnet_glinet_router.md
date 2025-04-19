@@ -74,6 +74,8 @@ But that's not all! Very important to execute on the GLiNet ssh command line as 
 tailscale set --stateful-filtering=false
 ```
 
+Now you should be able to connect and ping your devices.
+
 ## Conclusion
 
 With the latest version of Tailscale and the firewall zone configuration running on your GLiNet Beryl AX router, you now have a powerful subnet router that connects your home network to your Tailscale mesh network. This setup allows you to securely access your home devices from anywhere without exposing them directly to the Internet.
