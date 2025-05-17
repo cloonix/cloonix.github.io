@@ -65,7 +65,7 @@ Then you have to add the new zone to the (already existing) `lan->wan` forwardin
 Then you can fire up your tailscale again with the advertised routes.
 
 ```sh
-tailscale up --advertise-routes=192.168.8.1/24
+tailscale up --advertise-routes=192.168.8.0/24
 ```
 
 But that's not all! Very important to execute on the GLiNet ssh command line as well:
