@@ -11,15 +11,21 @@ os.chdir(script_folder)
 load_dotenv()
 api_key = os.environ.get('LINKDING_API_KEY')
 endpoint = os.environ.get('LINKDING_API_ENDPOINT')
+cf_client_id = os.environ.get('CF_ACCESS_CLIENT_ID')
+cf_client_secret = os.environ.get('CF_ACCESS_CLIENT_SECRET')
 
 # Check if the required environment variables are set
-if not api_key or not endpoint:
-    print("Please set the LINKDING_API_KEY and LINKDING_API_ENDPOINT environment variables")
+if not api_key or not endpoint or not cf_client_id or not cf_client_secret:
+    print("Please set the LINKDING_API_KEY, LINKDING_API_ENDPOINT, CF_ACCESS_CLIENT_ID, and CF_ACCESS_CLIENT_SECRET environment variables")
     exit(1)
 
 # Get bookmarks from the Linkding API
 url = f"{endpoint}/bookmarks/?limit=50&ordering=-date_added"
-headers = {"Authorization": f"Token {api_key}"}
+headers = {
+    "Authorization": f"Token {api_key}",
+    "CF-Access-Client-Id": cf_client_id,
+    "CF-Access-Client-Secret": cf_client_secret
+}
 response = requests.get(url, headers=headers)
 
 if response.status_code != 200:
