@@ -28,11 +28,21 @@ headers = {
 }
 response = requests.get(url, headers=headers)
 
+print(f"Request URL: {url}")
+print(f"Response status code: {response.status_code}")
+print(f"Response headers: {response.headers}")
+print(f"Response content: {response.text[:500]}...")  # First 500 chars
+
 if response.status_code != 200:
     print("Failed to retrieve bookmarks from the Linkding API")
     exit(1)
 
+# Create bookmarks directory if it doesn't exist
+os.makedirs("content/bookmarks", exist_ok=True)
+
 bookmarks = response.json().get("results", [])
+print(f"Found {len(bookmarks)} bookmarks")
+
 for bookmark in bookmarks:
     tags = [tag['name'] for tag in bookmark.get("tag_names", [])] if isinstance(bookmark.get("tag_names"), list) else bookmark.get("tag_names", [])
     # Only process bookmarks with BOTH "public" and "blog" tags
