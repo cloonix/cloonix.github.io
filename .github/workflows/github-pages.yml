@@ -1,0 +1,31 @@
+name: Deploy to GitHub Pages
+
+on:
+  workflow_run:
+    workflows: ["Update Raindrop Bookmarks"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundle install
+
+      - name: Build and deploy
+        run: |
+          bundle exec jekyll build
+          bundle exec jekyll deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
