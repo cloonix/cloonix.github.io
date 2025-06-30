@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["Update Raindrop Bookmarks"]
+    workflows: ["Get linkding bookmarks"]
     types:
       - completed
 

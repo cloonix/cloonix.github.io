@@ -1,4 +1,4 @@
-name: Update Raindrop Bookmarks
+name: Get linkding bookmarks
 
 on:
   push:
