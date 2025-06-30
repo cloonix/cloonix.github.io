@@ -19,8 +19,8 @@ if not api_key or not endpoint or not cf_client_id or not cf_client_secret:
     print("Please set the LINKDING_API_KEY, LINKDING_API_ENDPOINT, CF_ACCESS_CLIENT_ID, and CF_ACCESS_CLIENT_SECRET environment variables")
     exit(1)
 
-# Get bookmarks from the Linkding API
-url = f"{endpoint}/bookmarks/?limit=50&ordering=-date_added"
+# Get bookmarks from the Linkding API with tag search
+url = f"{endpoint}/bookmarks/?limit=50&ordering=-date_added&q=%23blog+%23public"
 headers = {
     "Authorization": f"Token {api_key}",
     "CF-Access-Client-Id": cf_client_id,
@@ -44,10 +44,18 @@ bookmarks = response.json().get("results", [])
 print(f"Found {len(bookmarks)} bookmarks")
 
 for bookmark in bookmarks:
-    tags = [tag['name'] for tag in bookmark.get("tag_names", [])] if isinstance(bookmark.get("tag_names"), list) else bookmark.get("tag_names", [])
-    # Only process bookmarks with BOTH "public" and "blog" tags
-    if not (("public" in tags) and ("blog" in tags)):
-        continue
+    print(f"Processing bookmark: {bookmark.get('title', 'No title')}")
+    print(f"Bookmark structure: {list(bookmark.keys())}")
+    
+    # Handle tags properly - Linkding uses 'tag_names' as a list of strings
+    tags = bookmark.get("tag_names", [])
+    if not isinstance(tags, list):
+        tags = []
+    
+    print(f"Tags found: {tags}")
+    
+    # No need to filter tags since the API query already filters for us
+    print(f"Processing bookmark with required tags")
 
     link = bookmark.get("url")
     excerpt = bookmark.get("description", "")
