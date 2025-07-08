@@ -2,7 +2,7 @@
 title: "My macOS experience (an app collection)"
 date: 2024-09-22T07:38:25Z
 type: blog
-featured: 1
+featured: 0
 draft: false
 categories:
   - personal
