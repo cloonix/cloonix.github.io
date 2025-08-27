@@ -6,7 +6,6 @@ categories = [ 'howto' ]
 type = "blog"
 series = ['hugo']
 toc = 1
-featured = 1
 [params]
   author = 'Claus Malter'
 +++
