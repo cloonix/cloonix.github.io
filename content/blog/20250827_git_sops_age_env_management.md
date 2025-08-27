@@ -10,6 +10,7 @@ tags:
   - sops
   - age
   - docker
+  - security
 ---
 
 ## Secure Your Environment Files with Git, SOPS, and age
