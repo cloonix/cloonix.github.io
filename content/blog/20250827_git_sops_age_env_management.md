@@ -13,9 +13,7 @@ tags:
   - security
 ---
 
-## Secure Your Environment Files with Git, SOPS, and age
-
-Managing secrets in code is challenging. You want your `.env` files under version control, but you definitely don't want to expose sensitive information. I explored solutions like [Infisical](https://github.com/Infisical/infisical), but found that self-hosting a production-ready platform was overkill for my simple Docker Compose projects. After some back-and-forth with AI, I finally arrived at a straightforward approach that fits my needs: [SOPS](https://github.com/mozilla/sops) and [age](https://github.com/FiloSottile/age). 
+Managing secrets in code is challenging. You want your `.env` files under version control, but you definitely don't want to expose sensitive information. I explored solutions like [Infisical](https://github.com/Infisical/infisical), but found that self-hosting a production-ready platform was overkill for my simple Docker Compose projects. After some back-and-forth with AI, I finally arrived at a straightforward approach that fits my needs: [SOPS](https://github.com/mozilla/sops) and [age](https://github.com/FiloSottile/age).
 
 SOPS and age let you safely store and version-control sensitive files (like `.env`) in your git repository. SOPS encrypts your secrets using age keys, so only authorized people can decrypt them. This way, you keep secrets secure while still tracking changes and sharing configs with your team.
 
@@ -83,4 +81,3 @@ Ignoring `.env` files is common, but it means you lose version control for your 
 ### Wrapping Up
 
 With SOPS and age, you get the best of both worlds: secure, versioned secrets and easy collaboration. No more leaking secrets or messy manual sharing. Give it a try!
-
