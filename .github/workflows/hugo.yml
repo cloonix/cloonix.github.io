@@ -54,8 +54,8 @@ jobs:
         env:
           LINKDING_API_KEY: ${{ secrets.LINKDING_API_KEY }}
           LINKDING_API_ENDPOINT: ${{ secrets.LINKDING_API_ENDPOINT }}
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          P_ACCESS_TOKEN_ID: ${{ secrets.P_ACCESS_TOKEN_ID }}
+          P_ACCESS_TOKEN: ${{ secrets.P_ACCESS_TOKEN }}
         run: |
           python bookmarks.py
 
