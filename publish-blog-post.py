@@ -172,11 +172,13 @@ class BlogPublisher:
         
         if not images_found:
             self.log("No images found in markdown")
-            return body_content, 0
+            return body_content, 0, []
         
         self.log(f"\nProcessing {len(images_found)} images:", force=True)
         processed_count = 0
         updated_content = body_content
+        image_counter = 1  # Counter for renaming images
+        image_renames = []  # Track original -> new filenames for source markdown
         
         for alt_text, img_path in images_found:
             # Skip external URLs
@@ -206,13 +208,16 @@ class BlogPublisher:
                     print(f"    (also tried {draft_dir.parent / img_path_clean})")
                 continue
             
-            # Destination path
-            dest_image = post_image_dir / source_image.name
-            dest_url = f"/images/blog/{post_slug}/{source_image.name}"
+            # Generate clean image filename: post_slug-01.png, post_slug-02.jpg, etc.
+            file_extension = source_image.suffix  # .png, .jpg, etc.
+            clean_image_name = f"{post_slug}-{image_counter:02d}{file_extension}"
+            dest_image = post_image_dir / clean_image_name
+            dest_url = f"/images/blog/{post_slug}/{clean_image_name}"
+            image_counter += 1
             
             if self.dry_run:
                 # Show what would happen in dry-run mode
-                print(f"  📷 {source_image.name}")
+                print(f"  📷 {source_image.name} → {clean_image_name}")
                 print(f"     Source: {source_image}")
                 print(f"     Dest:   {dest_image}")
                 
@@ -232,7 +237,7 @@ class BlogPublisher:
                 print(f"     Markdown: {img_path} → {dest_url}")
                 print()
             else:
-                self.log(f"  {source_image.name}")
+                self.log(f"  {source_image.name} → {clean_image_name}")
                 # Optimize and copy image
                 self.optimize_image(source_image, dest_image)
             
@@ -241,9 +246,16 @@ class BlogPublisher:
             new_reference = f"![{alt_text}]({dest_url})"
             updated_content = updated_content.replace(old_reference, new_reference)
             
+            # Track rename for source markdown update
+            image_renames.append({
+                'old_path': img_path,
+                'new_name': clean_image_name,
+                'alt_text': alt_text
+            })
+            
             processed_count += 1
         
-        return updated_content, processed_count
+        return updated_content, processed_count, image_renames
     
     def publish(self, draft_path):
         """Main publishing workflow"""
@@ -286,7 +298,7 @@ class BlogPublisher:
         
         # Process images
         draft_dir = draft_path.parent
-        updated_body, image_count = self.process_images(draft_dir, body, post_slug, is_already_published)
+        updated_body, image_count, image_renames = self.process_images(draft_dir, body, post_slug, is_already_published)
         
         if image_count > 0:
             if self.dry_run:
@@ -314,27 +326,74 @@ class BlogPublisher:
                 published_dir.mkdir(exist_ok=True)
                 # Rename to match Hugo convention
                 published_path = published_dir / filename
-                shutil.move(str(draft_path), str(published_path))
-                self.log(f"✓ Moved and renamed draft to: {published_path}", force=True)
                 
-                # Move assets folder if it exists
+                # Update source markdown with cleaned image names
+                source_markdown = content
+                for img_rename in image_renames:
+                    old_ref = f"![{img_rename['alt_text']}]({img_rename['old_path']})"
+                    new_ref = f"![{img_rename['alt_text']}](assets/{img_rename['new_name']})"
+                    source_markdown = source_markdown.replace(old_ref, new_ref)
+                
+                # Write updated source markdown to published folder
+                with open(published_path, 'w', encoding='utf-8') as f:
+                    f.write(source_markdown)
+                self.log(f"✓ Created published markdown: {published_path}", force=True)
+                
+                # Move assets folder if it exists and rename images there
                 assets_dir = draft_dir / "assets"
                 if assets_dir.exists() and assets_dir.is_dir():
                     published_assets = published_dir / "assets"
                     if published_assets.exists():
                         shutil.rmtree(published_assets)
-                    shutil.move(str(assets_dir), str(published_assets))
-                    self.log(f"✓ Moved assets folder to published/", force=True)
+                    published_assets.mkdir(exist_ok=True)
+                    
+                    # Copy and rename images to assets folder
+                    for img_rename in image_renames:
+                        old_img_path = assets_dir / Path(img_rename['old_path']).name
+                        if old_img_path.exists():
+                            new_img_path = published_assets / img_rename['new_name']
+                            shutil.copy2(str(old_img_path), str(new_img_path))
+                    
+                    self.log(f"✓ Copied and renamed {len(image_renames)} images to published/assets/", force=True)
             else:
                 self.log(f"[DRY RUN] Would move draft to: {published_dir / filename}", force=True)
         else:
             # Update the published markdown file with new content
             if not self.dry_run:
                 published_path = draft_path.parent / filename
+                
+                # Update source markdown with cleaned image names
+                source_markdown = content
+                for img_rename in image_renames:
+                    old_ref = f"![{img_rename['alt_text']}]({img_rename['old_path']})"
+                    new_ref = f"![{img_rename['alt_text']}](assets/{img_rename['new_name']})"
+                    source_markdown = source_markdown.replace(old_ref, new_ref)
+                
                 # If filename changed, rename the file
                 if draft_path.name != filename:
-                    shutil.move(str(draft_path), str(published_path))
+                    # Write to new filename
+                    with open(published_path, 'w', encoding='utf-8') as f:
+                        f.write(source_markdown)
+                    # Remove old file
+                    if published_path != draft_path:
+                        draft_path.unlink()
                     self.log(f"✓ Renamed {draft_path.name} → {filename}", force=True)
+                else:
+                    # Update existing file
+                    with open(published_path, 'w', encoding='utf-8') as f:
+                        f.write(source_markdown)
+                
+                # Rename images in assets folder if they exist
+                published_assets = draft_path.parent / "assets"
+                if published_assets.exists() and image_renames:
+                    for img_rename in image_renames:
+                        old_name = Path(img_rename['old_path']).name
+                        old_img_path = published_assets / old_name
+                        new_img_path = published_assets / img_rename['new_name']
+                        if old_img_path.exists() and old_img_path != new_img_path:
+                            shutil.move(str(old_img_path), str(new_img_path))
+                    self.log(f"✓ Renamed {len(image_renames)} images in published/assets/", force=True)
+                    
             self.log(f"✓ File already in published/ - regenerated output files", force=True)
         
         # Summary
