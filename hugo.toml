@@ -8,6 +8,10 @@ enableEmoji = true
 enableRobotsTXT = true
 summaryLength = 40
 
+# Publishing behavior for scheduled posts
+buildFuture = false   # Don't publish posts with future dates (wait for daily cron)
+buildDrafts = false   # Don't publish posts with draft: true
+
 [markup]
   [markup.tableOfContents]
     startLevel = 2
