@@ -201,10 +201,30 @@ class BlogPublisher:
             dest_image = post_image_dir / source_image.name
             dest_url = f"/images/blog/{post_slug}/{source_image.name}"
             
-            self.log(f"  {source_image.name}")
-            
-            # Optimize and copy image
-            if not self.dry_run:
+            if self.dry_run:
+                # Show what would happen in dry-run mode
+                print(f"  📷 {source_image.name}")
+                print(f"     Source: {source_image}")
+                print(f"     Dest:   {dest_image}")
+                
+                # Show if resize would happen
+                try:
+                    from PIL import Image
+                    with Image.open(source_image) as img:
+                        if img.width > self.max_image_width:
+                            ratio = self.max_image_width / img.width
+                            new_height = int(img.height * ratio)
+                            print(f"     Action: Resize {img.width}x{img.height} → {self.max_image_width}x{new_height}")
+                        else:
+                            print(f"     Action: Copy {img.width}x{img.height} (no resize needed)")
+                except Exception as e:
+                    print(f"     Action: Copy (could not read dimensions: {e})")
+                
+                print(f"     Markdown: {img_path} → {dest_url}")
+                print()
+            else:
+                self.log(f"  {source_image.name}")
+                # Optimize and copy image
                 self.optimize_image(source_image, dest_image)
             
             # Update markdown reference
@@ -257,7 +277,10 @@ class BlogPublisher:
         updated_body, image_count = self.process_images(draft_dir, body, post_slug)
         
         if image_count > 0:
-            self.log(f"✓ Processed {image_count} images → static/images/blog/{post_slug}/", force=True)
+            if self.dry_run:
+                print(f"[DRY RUN] Would process {image_count} images → static/images/blog/{post_slug}/")
+            else:
+                self.log(f"✓ Processed {image_count} images → static/images/blog/{post_slug}/", force=True)
         
         # Reconstruct markdown with updated front matter and body
         front_matter_yaml = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True)
@@ -299,10 +322,25 @@ class BlogPublisher:
         
         # Summary
         self.log(f"\n{'='*60}", force=True)
-        self.log("✅ Publishing complete!", force=True)
+        if self.dry_run:
+            print("🔍 DRY RUN SUMMARY - No files were changed")
+        else:
+            self.log("✅ Publishing complete!", force=True)
         self.log(f"{'='*60}\n", force=True)
         
-        if not self.dry_run:
+        if self.dry_run:
+            print("Would create/modify:")
+            print(f"  📄 content/blog/{filename}")
+            if image_count > 0:
+                print(f"  📁 static/images/blog/{post_slug}/")
+                print(f"     ({image_count} images)")
+            if not is_already_published:
+                print(f"  📦 {published_dir / draft_path.name} (moved from drafts)")
+                assets_dir = draft_dir / "assets"
+                if assets_dir.exists() and assets_dir.is_dir():
+                    print(f"  📦 {published_dir / 'assets'} (moved from drafts)")
+            print(f"\nRun without --dry-run to actually publish")
+        else:
             self.log("Next steps:", force=True)
             self.log(f"  1. Preview: hugo server -D", force=True)
             self.log(f"  2. Visit: http://localhost:1313/", force=True)

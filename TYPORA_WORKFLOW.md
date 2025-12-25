@@ -249,7 +249,7 @@ python3 publish-blog-post.py ~/Documents/blog-drafts/your-post.md
 # Custom maximum image width
 python3 publish-blog-post.py ~/Documents/blog-drafts/my-post.md --max-width 1200
 
-# Dry run (see what would happen without making changes)
+# Dry run (see what would happen without making changes - shows image details)
 python3 publish-blog-post.py ~/Documents/blog-drafts/my-post.md --dry-run
 
 # Verbose output (see detailed processing steps)
@@ -259,7 +259,7 @@ python3 publish-blog-post.py ~/Documents/blog-drafts/my-post.md --verbose
 python3 publish-blog-post.py ~/Documents/blog-drafts/my-post.md --max-width 1200 --verbose
 ```
 
-### Example Output
+### Example Output (Normal Mode)
 
 ```
 ============================================================
@@ -293,6 +293,51 @@ Next steps:
      git add content/blog/20251225_typora_hugo_workflow.md
      git add static/images/blog/20251225_typora_hugo_workflow/
      git commit -m "Add blog post: Typora Hugo Workflow"
+```
+
+### Example Output (Dry-Run Mode)
+
+```bash
+python3 publish-blog-post.py ~/Documents/blog-drafts/my-post.md --dry-run
+```
+
+```
+============================================================
+Publishing: my-post.md
+============================================================
+
+✓ Front matter validated
+✓ Generated filename: 20251225_my_post.md
+
+Processing 2 images:
+  📷 screenshot.png
+     Source: /Users/claus/Documents/blog-drafts/assets/screenshot.png
+     Dest:   /Users/claus/git/cloonix.github.io/static/images/blog/20251225_my_post/screenshot.png
+     Action: Resize 2560x1440 → 1920x1080
+     Markdown: assets/screenshot.png → /images/blog/20251225_my_post/screenshot.png
+
+  📷 diagram.jpg
+     Source: /Users/claus/Documents/blog-drafts/assets/diagram.jpg
+     Dest:   /Users/claus/git/cloonix.github.io/static/images/blog/20251225_my_post/diagram.jpg
+     Action: Copy 1024x768 (no resize needed)
+     Markdown: assets/diagram.jpg → /images/blog/20251225_my_post/diagram.jpg
+
+[DRY RUN] Would process 2 images → static/images/blog/20251225_my_post/
+[DRY RUN] Would create: content/blog/20251225_my_post.md
+[DRY RUN] Would move draft to: ~/Documents/blog-drafts/published/my-post.md
+
+============================================================
+🔍 DRY RUN SUMMARY - No files were changed
+============================================================
+
+Would create/modify:
+  📄 content/blog/20251225_my_post.md
+  📁 static/images/blog/20251225_my_post/
+     (2 images)
+  📦 ~/Documents/blog-drafts/published/my-post.md (moved from drafts)
+  📦 ~/Documents/blog-drafts/published/assets (moved from drafts)
+
+Run without --dry-run to actually publish
 ```
 
 ### Preview Your Post
