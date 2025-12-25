@@ -1,18 +1,9 @@
 ---
-title: "logseq with syncthing and/or git"
-date: 2024-08-29T13:01:38Z
+title: logseq with syncthing and/or git
+date: "2024-08-29T13:01:38Z"
 type: blog
 draft: false
-categories:
-  - Howto
-tags:
-  - logseq
-  - obsidian
-  - syncthing
-  - git
-  - dev
 ---
-
 Recently, I fell in love with [logseq](https://logseq.com/) [1]. At first glance, logseq confused me and didn't convince me. Later, after reading some articles and watching some videos, we became a couple :wink:
 
 For my use case, I couldn't see logseq as a competitor or replacement for [Obsidian](https://obsidian.md/) [2], but as a complement. In my opinion, logseq is perfect for collecting notes and linking them together. On the other hand, Obsidian is my tool of choice when it comes to collecting topic-specific documents, such as software-specific commands that make my life easier and that I need or forget frequently.

@@ -1,12 +1,17 @@
-+++
-title = 'Working with Hugo (Part 3): Images'
-date = 2024-08-15T17:32:58Z
-tags = ['hugo', 'git', 'howto', 'development' ]
-categories = ['howto']
-type = "blog"
-series = ['hugo']
-+++
-
+---
+title: "Working with Hugo (Part 3): Images"
+date: "2024-08-15T17:32:58Z"
+tags:
+  - hugo
+  - git
+  - howto
+  - development
+categories:
+  - howto
+type: blog
+series:
+  - hugo
+---
 **TL;DR** ▶️ Long story short, I couldn't find a simple solution to handle images in Hugo's default Markdown parser.
 
 At the time of writing this post, i'm not using a single image in one of my posts.  

@@ -1,16 +1,9 @@
 ---
-title: "SSH remote tunnel and a simple VPN solution"
-date: 2024-09-24T15:27:17Z
+title: SSH remote tunnel and a simple VPN solution
+date: "2024-09-24T15:27:17Z"
 type: blog
 draft: false
-categories:
-  - howto
-tags:
-  - ssh
-  - howto
-  - vpn
 ---
-
 Recently I wanted (or needed) to connect to a system that was not accessible from outside behind a firewall. This can be done via an SSH tunnel. It's actually simple, but the solution is perhaps not yet familiar to everyone.
 
 So here is the initial situation. Three involved hosts:
