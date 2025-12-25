@@ -12,7 +12,6 @@ Options:
     --verbose               Show detailed output
 """
 
-import os
 import sys
 import re
 import shutil
@@ -33,7 +32,6 @@ class BlogPublisher:
         self.content_dir = self.hugo_root / "content" / "blog"
         self.images_dir = self.hugo_root / "static" / "images" / "blog"
         
-        # Ensure directories exist
         if not dry_run:
             self.content_dir.mkdir(parents=True, exist_ok=True)
             self.images_dir.mkdir(parents=True, exist_ok=True)
@@ -45,217 +43,173 @@ class BlogPublisher:
     
     def parse_front_matter(self, content):
         """Extract YAML front matter from markdown content"""
-        # Match YAML front matter (--- ... ---)
         yaml_pattern = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
         match = re.match(yaml_pattern, content, re.DOTALL)
         
         if match:
             try:
-                front_matter = yaml.safe_load(match.group(1))
-                body = match.group(2)
-                return front_matter, body
+                return yaml.safe_load(match.group(1)), match.group(2)
             except yaml.YAMLError as e:
                 raise ValueError(f"Invalid YAML front matter: {e}")
-        
-        # No front matter found
         return None, content
     
     def validate_front_matter(self, front_matter):
-        """Validate that required front matter fields exist"""
+        """Validate required front matter fields"""
         if not front_matter:
             raise ValueError(
-                "No front matter found. Please add front matter with at least:\n"
-                "---\n"
-                "title: \"Your Post Title\"\n"
-                "categories:\n"
-                "  - category1\n"
-                "tags:\n"
-                "  - tag1\n"
-                "---"
+                "No front matter found. Please add:\n"
+                "---\ntitle: \"Your Title\"\ncategories:\n  - cat1\ntags:\n  - tag1\n---"
             )
         
-        required_fields = ['title', 'categories', 'tags']
-        missing = [field for field in required_fields if field not in front_matter]
-        
+        required = ['title', 'categories', 'tags']
+        missing = [f for f in required if f not in front_matter]
         if missing:
-            raise ValueError(
-                f"Missing required front matter fields: {', '.join(missing)}\n"
-                f"Please add these fields to your markdown file."
-            )
+            raise ValueError(f"Missing required fields: {', '.join(missing)}")
         
-        # Validate categories and tags are lists
         if not isinstance(front_matter['categories'], list):
-            raise ValueError("Front matter 'categories' must be a list (YAML array)")
+            raise ValueError("'categories' must be a list")
         if not isinstance(front_matter['tags'], list):
-            raise ValueError("Front matter 'tags' must be a list (YAML array)")
-        
-        return True
+            raise ValueError("'tags' must be a list")
     
     def generate_filename(self, title):
-        """Generate Hugo filename from title: YYYYMMDD_slug.md"""
+        """Generate Hugo filename: YYYYMMDD_slug.md"""
         date_str = datetime.now().strftime("%Y%m%d")
-        
-        # Create slug from title
-        slug = title.lower()
-        slug = re.sub(r'[^\w\s-]', '', slug)  # Remove special chars
-        slug = re.sub(r'[-\s]+', '_', slug)   # Replace spaces/hyphens with underscore
-        slug = slug.strip('_')
-        
+        slug = re.sub(r'[^\w\s-]', '', title.lower())
+        slug = re.sub(r'[-\s]+', '_', slug).strip('_')
         return f"{date_str}_{slug}.md"
     
-    def update_front_matter(self, front_matter):
-        """Add/update Hugo-specific front matter fields"""
-        # Ensure required Hugo fields exist
-        if 'date' not in front_matter:
-            front_matter['date'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        
-        if 'type' not in front_matter:
-            front_matter['type'] = 'blog'
-        
-        if 'draft' not in front_matter:
-            front_matter['draft'] = False
-        
-        return front_matter
-    
-    def optimize_image(self, image_path, output_path):
-        """Resize and optimize image if needed"""
+    def optimize_image(self, source, dest):
+        """Resize and optimize image"""
         try:
-            with Image.open(image_path) as img:
-                original_size = img.size
-                
-                # Check if resize needed (only resize width, maintain aspect ratio)
+            with Image.open(source) as img:
                 if img.width > self.max_image_width:
-                    # Calculate new height maintaining aspect ratio
-                    # ratio = new_width / old_width
-                    # new_height = old_height * ratio
                     ratio = self.max_image_width / img.width
                     new_height = int(img.height * ratio)
+                    self.log(f"  Resizing: {img.width}x{img.height} → {self.max_image_width}x{new_height}")
+                    img = img.resize((self.max_image_width, new_height), Image.Resampling.LANCZOS)
                     
-                    self.log(f"  Resizing: {original_size[0]}x{original_size[1]} → {self.max_image_width}x{new_height}")
-                    
-                    if not self.dry_run:
-                        img = img.resize((self.max_image_width, new_height), Image.Resampling.LANCZOS)
-                        
-                        # Save with optimization
-                        if img.format in ['JPEG', 'JPG']:
-                            img.save(output_path, 'JPEG', quality=85, optimize=True)
-                        elif img.format == 'PNG':
-                            img.save(output_path, 'PNG', optimize=True)
-                        else:
-                            img.save(output_path, optimize=True)
+                    if img.format in ['JPEG', 'JPG']:
+                        img.save(dest, 'JPEG', quality=85, optimize=True)
+                    elif img.format == 'PNG':
+                        img.save(dest, 'PNG', optimize=True)
+                    else:
+                        img.save(dest, optimize=True)
                 else:
-                    # Just copy if no resize needed
-                    self.log(f"  Copying: {original_size[0]}x{original_size[1]} (no resize needed)")
-                    if not self.dry_run:
-                        shutil.copy2(image_path, output_path)
-                
-                return True
+                    self.log(f"  Copying: {img.width}x{img.height} (no resize needed)")
+                    shutil.copy2(source, dest)
         except Exception as e:
-            print(f"⚠️  Warning: Could not optimize {image_path.name}: {e}")
-            # Fallback: just copy the file
-            if not self.dry_run:
-                shutil.copy2(image_path, output_path)
-            return False
+            print(f"⚠️  Warning: Could not optimize {source.name}: {e}")
+            shutil.copy2(source, dest)
     
-    def process_images(self, draft_dir, body_content, post_slug, is_in_published=False):
-        """Find, copy, optimize images and update markdown references"""
-        # Create image directory for this post
-        post_image_dir = self.images_dir / post_slug
+    def find_image_path(self, draft_dir, img_path, is_in_published):
+        """Find image file, checking multiple locations if needed"""
+        source = (draft_dir / img_path.strip()).resolve()
         
+        if not source.exists() and is_in_published:
+            # Check parent directory for images
+            source_parent = (draft_dir.parent / img_path.strip()).resolve()
+            if source_parent.exists():
+                return source_parent
+        
+        return source if source.exists() else None
+    
+    def process_images(self, draft_dir, body, post_slug, is_in_published):
+        """Process all images: find, optimize, rename, update references"""
+        post_image_dir = self.images_dir / post_slug
         if not self.dry_run:
             post_image_dir.mkdir(parents=True, exist_ok=True)
         
-        # Find all image references in markdown
-        # Matches: ![alt](path) and ![alt](path "title")
-        image_pattern = r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)'
-        images_found = re.findall(image_pattern, body_content)
-        
+        # Find all image references
+        images_found = re.findall(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)', body)
         if not images_found:
-            self.log("No images found in markdown")
-            return body_content, 0, []
+            return body, 0, []
         
         self.log(f"\nProcessing {len(images_found)} images:", force=True)
-        processed_count = 0
-        updated_content = body_content
-        image_counter = 1  # Counter for renaming images
-        image_renames = []  # Track original -> new filenames for source markdown
+        updated_body = body
+        image_renames = []
+        counter = 1
         
         for alt_text, img_path in images_found:
-            # Skip external URLs
-            if img_path.startswith(('http://', 'https://', '//')):
-                self.log(f"  Skipping external URL: {img_path}")
+            # Skip external URLs and already processed images
+            if img_path.startswith(('http://', 'https://', '//', '/images/blog/')):
+                self.log(f"  Skipping: {img_path}")
                 continue
             
-            # Skip already processed images (already in /images/blog/)
-            if img_path.startswith('/images/blog/'):
-                self.log(f"  Skipping already published: {img_path}")
+            # Find source image
+            source = self.find_image_path(draft_dir, img_path, is_in_published)
+            if not source:
+                print(f"⚠️  Warning: Image not found: {img_path}")
                 continue
             
-            # Resolve image path relative to draft file
-            img_path_clean = img_path.strip()
-            source_image = (draft_dir / img_path_clean).resolve()
+            # Generate clean filename
+            ext = source.suffix
+            clean_name = f"{post_slug}-{counter:02d}{ext}"
+            dest = post_image_dir / clean_name
+            dest_url = f"/images/blog/{post_slug}/{clean_name}"
+            counter += 1
             
-            # If not found and draft is in published/, check parent directory
-            if not source_image.exists() and is_in_published:
-                source_image_parent = (draft_dir.parent / img_path_clean).resolve()
-                if source_image_parent.exists():
-                    source_image = source_image_parent
-            
-            if not source_image.exists():
-                print(f"⚠️  Warning: Image not found: {source_image}")
-                print(f"    (looked in {draft_dir / img_path_clean})")
-                if is_in_published:
-                    print(f"    (also tried {draft_dir.parent / img_path_clean})")
-                continue
-            
-            # Generate clean image filename: post_slug-01.png, post_slug-02.jpg, etc.
-            file_extension = source_image.suffix  # .png, .jpg, etc.
-            clean_image_name = f"{post_slug}-{image_counter:02d}{file_extension}"
-            dest_image = post_image_dir / clean_image_name
-            dest_url = f"/images/blog/{post_slug}/{clean_image_name}"
-            image_counter += 1
-            
+            # Show/process image
             if self.dry_run:
-                # Show what would happen in dry-run mode
-                print(f"  📷 {source_image.name} → {clean_image_name}")
-                print(f"     Source: {source_image}")
-                print(f"     Dest:   {dest_image}")
-                
-                # Show if resize would happen
+                print(f"  📷 {source.name} → {clean_name}")
+                print(f"     {source} → {dest}")
                 try:
-                    from PIL import Image
-                    with Image.open(source_image) as img:
+                    with Image.open(source) as img:
                         if img.width > self.max_image_width:
                             ratio = self.max_image_width / img.width
-                            new_height = int(img.height * ratio)
-                            print(f"     Action: Resize {img.width}x{img.height} → {self.max_image_width}x{new_height}")
+                            print(f"     Resize: {img.width}x{img.height} → {self.max_image_width}x{int(img.height*ratio)}")
                         else:
-                            print(f"     Action: Copy {img.width}x{img.height} (no resize needed)")
-                except Exception as e:
-                    print(f"     Action: Copy (could not read dimensions: {e})")
-                
-                print(f"     Markdown: {img_path} → {dest_url}")
-                print()
+                            print(f"     Copy: {img.width}x{img.height}")
+                except:
+                    print(f"     Copy (dimensions unknown)")
             else:
-                self.log(f"  {source_image.name} → {clean_image_name}")
-                # Optimize and copy image
-                self.optimize_image(source_image, dest_image)
+                self.log(f"  {source.name} → {clean_name}")
+                self.optimize_image(source, dest)
             
-            # Update markdown reference
-            old_reference = f"![{alt_text}]({img_path})"
-            new_reference = f"![{alt_text}]({dest_url})"
-            updated_content = updated_content.replace(old_reference, new_reference)
+            # Update markdown references
+            old_ref = f"![{alt_text}]({img_path})"
+            new_ref = f"![{alt_text}]({dest_url})"
+            updated_body = updated_body.replace(old_ref, new_ref)
             
-            # Track rename for source markdown update
-            image_renames.append({
-                'old_path': img_path,
-                'new_name': clean_image_name,
-                'alt_text': alt_text
-            })
-            
-            processed_count += 1
+            image_renames.append({'old_path': img_path, 'new_name': clean_name, 'alt_text': alt_text})
         
-        return updated_content, processed_count, image_renames
+        if image_renames and not self.dry_run:
+            self.log(f"✓ Processed {len(image_renames)} images → static/images/blog/{post_slug}/", force=True)
+        elif image_renames and self.dry_run:
+            print(f"[DRY RUN] Would process {len(image_renames)} images → static/images/blog/{post_slug}/")
+        
+        return updated_body, len(image_renames), image_renames
+    
+    def update_source_markdown(self, content, image_renames):
+        """Update markdown with cleaned image names for source file"""
+        updated = content
+        for img in image_renames:
+            old_ref = f"![{img['alt_text']}]({img['old_path']})"
+            new_ref = f"![{img['alt_text']}](assets/{img['new_name']})"
+            updated = updated.replace(old_ref, new_ref)
+        return updated
+    
+    def move_and_rename_images(self, draft_dir, published_dir, image_renames):
+        """Move images from draft/assets to published/assets with new names"""
+        assets_dir = draft_dir / "assets"
+        if not assets_dir.exists():
+            return
+        
+        published_assets = published_dir / "assets"
+        if published_assets.exists():
+            shutil.rmtree(published_assets)
+        published_assets.mkdir(exist_ok=True)
+        
+        for img in image_renames:
+            old_img = assets_dir / Path(img['old_path']).name
+            if old_img.exists():
+                new_img = published_assets / img['new_name']
+                shutil.move(str(old_img), str(new_img))
+        
+        # Cleanup empty assets dir
+        if assets_dir.exists() and not list(assets_dir.iterdir()):
+            assets_dir.rmdir()
+        
+        self.log(f"✓ Moved and renamed {len(image_renames)} images to published/assets/", force=True)
     
     def publish(self, draft_path):
         """Main publishing workflow"""
@@ -263,168 +217,100 @@ class BlogPublisher:
         
         if not draft_path.exists():
             raise FileNotFoundError(f"Draft file not found: {draft_path}")
-        
-        if not draft_path.suffix == '.md':
-            raise ValueError(f"File must be a markdown file (.md): {draft_path}")
+        if draft_path.suffix != '.md':
+            raise ValueError(f"File must be markdown (.md): {draft_path}")
         
         self.log(f"\n{'='*60}", force=True)
         self.log(f"Publishing: {draft_path.name}", force=True)
         self.log(f"{'='*60}\n", force=True)
         
-        # Read draft content
-        with open(draft_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Parse front matter
-        self.log("Parsing front matter...")
+        # Read and parse
+        content = draft_path.read_text(encoding='utf-8')
         front_matter, body = self.parse_front_matter(content)
-        
-        # Validate front matter
         self.validate_front_matter(front_matter)
         self.log("✓ Front matter validated", force=True)
         
-        # Update front matter with Hugo fields
-        front_matter = self.update_front_matter(front_matter)
+        # Update front matter
+        if 'date' not in front_matter:
+            front_matter['date'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        front_matter.setdefault('type', 'blog')
+        front_matter.setdefault('draft', False)
         
         # Generate filename
         filename = self.generate_filename(front_matter['title'])
-        post_slug = filename[:-3]  # Remove .md extension
-        dest_file = self.content_dir / filename
-        
+        post_slug = filename[:-3]
         self.log(f"✓ Generated filename: {filename}", force=True)
         
-        # Check if draft is already in published folder
-        is_already_published = "published" in draft_path.parts
-        
         # Process images
+        is_already_published = "published" in draft_path.parts
         draft_dir = draft_path.parent
-        updated_body, image_count, image_renames = self.process_images(draft_dir, body, post_slug, is_already_published)
+        updated_body, image_count, image_renames = self.process_images(
+            draft_dir, body, post_slug, is_already_published
+        )
         
-        if image_count > 0:
-            if self.dry_run:
-                print(f"[DRY RUN] Would process {image_count} images → static/images/blog/{post_slug}/")
-            else:
-                self.log(f"✓ Processed {image_count} images → static/images/blog/{post_slug}/", force=True)
-        
-        # Reconstruct markdown with updated front matter and body
+        # Write Hugo content
         front_matter_yaml = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True)
-        final_content = f"---\n{front_matter_yaml}---\n{updated_body}"
+        hugo_content = f"---\n{front_matter_yaml}---\n{updated_body}"
         
-        # Write to destination
         if not self.dry_run:
-            with open(dest_file, 'w', encoding='utf-8') as f:
-                f.write(final_content)
+            (self.content_dir / filename).write_text(hugo_content, encoding='utf-8')
             self.log(f"✓ Created: content/blog/{filename}", force=True)
         else:
             self.log(f"[DRY RUN] Would create: content/blog/{filename}", force=True)
         
-        # Move draft to published folder
+        # Handle source file in published folder
         published_dir = draft_path.parent / "published"
+        published_path = published_dir / filename
         
         if not is_already_published:
+            # First time publishing
             if not self.dry_run:
                 published_dir.mkdir(exist_ok=True)
-                # Rename to match Hugo convention
-                published_path = published_dir / filename
-                
-                # Update source markdown with cleaned image names
-                source_markdown = content
-                for img_rename in image_renames:
-                    old_ref = f"![{img_rename['alt_text']}]({img_rename['old_path']})"
-                    new_ref = f"![{img_rename['alt_text']}](assets/{img_rename['new_name']})"
-                    source_markdown = source_markdown.replace(old_ref, new_ref)
-                
-                # Write updated source markdown to published folder
-                with open(published_path, 'w', encoding='utf-8') as f:
-                    f.write(source_markdown)
-                
-                # Remove the original draft file
+                source_markdown = self.update_source_markdown(content, image_renames)
+                published_path.write_text(source_markdown, encoding='utf-8')
                 draft_path.unlink()
                 self.log(f"✓ Moved and renamed markdown: {draft_path.name} → {filename}", force=True)
                 
-                # Move assets folder if it exists and rename images there
-                assets_dir = draft_dir / "assets"
-                if assets_dir.exists() and assets_dir.is_dir():
-                    published_assets = published_dir / "assets"
-                    if published_assets.exists():
-                        shutil.rmtree(published_assets)
-                    published_assets.mkdir(exist_ok=True)
-                    
-                    # Move and rename images to assets folder
-                    for img_rename in image_renames:
-                        old_img_path = assets_dir / Path(img_rename['old_path']).name
-                        if old_img_path.exists():
-                            new_img_path = published_assets / img_rename['new_name']
-                            shutil.move(str(old_img_path), str(new_img_path))
-                    
-                    # Remove old assets folder if it's now empty or has no other files
-                    remaining_files = list(assets_dir.iterdir())
-                    if not remaining_files:
-                        assets_dir.rmdir()
-                    
-                    self.log(f"✓ Moved and renamed {len(image_renames)} images to published/assets/", force=True)
+                if image_renames:
+                    self.move_and_rename_images(draft_dir, published_dir, image_renames)
             else:
-                self.log(f"[DRY RUN] Would move draft to: {published_dir / filename}", force=True)
+                self.log(f"[DRY RUN] Would move draft to: {published_path}", force=True)
         else:
-            # Update the published markdown file with new content
+            # Re-publishing
             if not self.dry_run:
-                published_path = draft_path.parent / filename
+                source_markdown = self.update_source_markdown(content, image_renames)
                 
-                # Update source markdown with cleaned image names
-                source_markdown = content
-                for img_rename in image_renames:
-                    old_ref = f"![{img_rename['alt_text']}]({img_rename['old_path']})"
-                    new_ref = f"![{img_rename['alt_text']}](assets/{img_rename['new_name']})"
-                    source_markdown = source_markdown.replace(old_ref, new_ref)
-                
-                # If filename changed, rename the file
                 if draft_path.name != filename:
-                    # Write to new filename
-                    with open(published_path, 'w', encoding='utf-8') as f:
-                        f.write(source_markdown)
-                    # Remove old file
-                    if published_path != draft_path:
-                        draft_path.unlink()
+                    published_path.write_text(source_markdown, encoding='utf-8')
+                    draft_path.unlink()
                     self.log(f"✓ Renamed {draft_path.name} → {filename}", force=True)
                 else:
-                    # Update existing file
-                    with open(published_path, 'w', encoding='utf-8') as f:
-                        f.write(source_markdown)
+                    draft_path.write_text(source_markdown, encoding='utf-8')
                 
-                # Rename images in assets folder if they exist
-                published_assets = draft_path.parent / "assets"
-                if published_assets.exists() and image_renames:
-                    for img_rename in image_renames:
-                        old_name = Path(img_rename['old_path']).name
-                        old_img_path = published_assets / old_name
-                        new_img_path = published_assets / img_rename['new_name']
-                        if old_img_path.exists() and old_img_path != new_img_path:
-                            shutil.move(str(old_img_path), str(new_img_path))
+                # Rename images in assets if needed
+                if image_renames and (draft_path.parent / "assets").exists():
+                    for img in image_renames:
+                        old_img = draft_path.parent / "assets" / Path(img['old_path']).name
+                        new_img = draft_path.parent / "assets" / img['new_name']
+                        if old_img.exists() and old_img != new_img:
+                            shutil.move(str(old_img), str(new_img))
                     self.log(f"✓ Renamed {len(image_renames)} images in published/assets/", force=True)
-                    
+            
             self.log(f"✓ File already in published/ - regenerated output files", force=True)
         
         # Summary
         self.log(f"\n{'='*60}", force=True)
         if self.dry_run:
             print("🔍 DRY RUN SUMMARY - No files were changed")
-        else:
-            self.log("✅ Publishing complete!", force=True)
-        self.log(f"{'='*60}\n", force=True)
-        
-        if self.dry_run:
-            print("Would create/modify:")
+            print(f"\nWould create/modify:")
             print(f"  📄 content/blog/{filename}")
             if image_count > 0:
-                print(f"  📁 static/images/blog/{post_slug}/")
-                print(f"     ({image_count} images)")
-            if not is_already_published:
-                print(f"  📦 {published_dir / draft_path.name} (moved from drafts)")
-                assets_dir = draft_dir / "assets"
-                if assets_dir.exists() and assets_dir.is_dir():
-                    print(f"  📦 {published_dir / 'assets'} (moved from drafts)")
+                print(f"  📁 static/images/blog/{post_slug}/ ({image_count} images)")
+            print(f"  📦 {published_path} (moved from drafts)")
             print(f"\nRun without --dry-run to actually publish")
         else:
+            self.log("✅ Publishing complete!", force=True)
+            self.log(f"{'='*60}\n", force=True)
             self.log("Next steps:", force=True)
             self.log(f"  1. Preview: hugo server -D", force=True)
             self.log(f"  2. Visit: http://localhost:1313/", force=True)
@@ -433,13 +319,6 @@ class BlogPublisher:
             if image_count > 0:
                 self.log(f"     git add static/images/blog/{post_slug}/", force=True)
             self.log(f"     git commit -m \"Add blog post: {front_matter['title']}\"", force=True)
-        
-        return {
-            'filename': filename,
-            'slug': post_slug,
-            'image_count': image_count,
-            'dest_file': dest_file
-        }
 
 
 def main():
@@ -464,7 +343,7 @@ Examples:
     
     args = parser.parse_args()
     
-    # Detect Hugo root (current directory or parent)
+    # Detect Hugo root
     current_dir = Path.cwd()
     if (current_dir / 'hugo.toml').exists() or (current_dir / 'config.toml').exists():
         hugo_root = current_dir
@@ -482,11 +361,8 @@ Examples:
             dry_run=args.dry_run,
             verbose=args.verbose
         )
-        
-        result = publisher.publish(args.draft_file)
-        
+        publisher.publish(args.draft_file)
         sys.exit(0)
-        
     except Exception as e:
         print(f"\n❌ Error: {e}\n")
         if args.verbose:
