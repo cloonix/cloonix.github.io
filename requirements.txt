@@ -1,0 +1,6 @@
+# Dependencies for publish-blog-post.py
+# Image processing (resize, optimize)
+Pillow>=10.0.0
+
+# YAML front matter parsing
+PyYAML>=6.0
