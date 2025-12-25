@@ -312,9 +312,10 @@ class BlogPublisher:
         if not is_already_published:
             if not self.dry_run:
                 published_dir.mkdir(exist_ok=True)
-                published_path = published_dir / draft_path.name
+                # Rename to match Hugo convention
+                published_path = published_dir / filename
                 shutil.move(str(draft_path), str(published_path))
-                self.log(f"✓ Moved draft to: {published_path}", force=True)
+                self.log(f"✓ Moved and renamed draft to: {published_path}", force=True)
                 
                 # Move assets folder if it exists
                 assets_dir = draft_dir / "assets"
@@ -325,8 +326,15 @@ class BlogPublisher:
                     shutil.move(str(assets_dir), str(published_assets))
                     self.log(f"✓ Moved assets folder to published/", force=True)
             else:
-                self.log(f"[DRY RUN] Would move draft to: {published_dir / draft_path.name}", force=True)
+                self.log(f"[DRY RUN] Would move draft to: {published_dir / filename}", force=True)
         else:
+            # Update the published markdown file with new content
+            if not self.dry_run:
+                published_path = draft_path.parent / filename
+                # If filename changed, rename the file
+                if draft_path.name != filename:
+                    shutil.move(str(draft_path), str(published_path))
+                    self.log(f"✓ Renamed {draft_path.name} → {filename}", force=True)
             self.log(f"✓ File already in published/ - regenerated output files", force=True)
         
         # Summary
