@@ -30,11 +30,9 @@ class BlogPublisher:
         self.verbose = verbose
         
         self.content_dir = self.hugo_root / "content" / "blog"
-        self.images_dir = self.hugo_root / "static" / "images" / "blog"
         
         if not dry_run:
             self.content_dir.mkdir(parents=True, exist_ok=True)
-            self.images_dir.mkdir(parents=True, exist_ok=True)
     
     def log(self, message, force=False):
         """Print message if verbose or forced"""
@@ -108,11 +106,10 @@ class BlogPublisher:
         
         return source if source.exists() else None
     
-    def process_images(self, draft_dir, body, post_slug, is_in_published):
+    def process_images(self, draft_dir, body, post_slug, post_bundle_dir, is_in_published):
         """Process all images: find, optimize, rename, update references"""
-        post_image_dir = self.images_dir / post_slug
-        if not self.dry_run:
-            post_image_dir.mkdir(parents=True, exist_ok=True)
+        # Images go in the same folder as index.md (page bundle)
+        post_image_dir = post_bundle_dir
         
         # Find all image references
         images_found = re.findall(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)', body)
@@ -140,7 +137,7 @@ class BlogPublisher:
             ext = source.suffix
             clean_name = f"{post_slug}-{counter:02d}{ext}"
             dest = post_image_dir / clean_name
-            dest_url = f"/images/blog/{post_slug}/{clean_name}"
+            dest_url = clean_name  # Relative path for page bundles
             counter += 1
             
             # Show/process image
@@ -168,43 +165,20 @@ class BlogPublisher:
             image_renames.append({'old_path': img_path, 'new_name': clean_name, 'alt_text': alt_text})
         
         if image_renames and not self.dry_run:
-            self.log(f"✓ Processed {len(image_renames)} images → static/images/blog/{post_slug}/", force=True)
+            self.log(f"✓ Processed {len(image_renames)} images → {post_slug}/", force=True)
         elif image_renames and self.dry_run:
-            print(f"[DRY RUN] Would process {len(image_renames)} images → static/images/blog/{post_slug}/")
+            print(f"[DRY RUN] Would process {len(image_renames)} images → {post_slug}/")
         
         return updated_body, len(image_renames), image_renames
     
     def update_source_markdown(self, content, image_renames):
-        """Update markdown with cleaned image names for source file"""
+        """Update markdown with cleaned image names for source file (relative paths)"""
         updated = content
         for img in image_renames:
             old_ref = f"![{img['alt_text']}]({img['old_path']})"
-            new_ref = f"![{img['alt_text']}](assets/{img['new_name']})"
+            new_ref = f"![{img['alt_text']}]({img['new_name']})"  # Relative to bundle root
             updated = updated.replace(old_ref, new_ref)
         return updated
-    
-    def move_and_rename_images(self, draft_dir, published_dir, image_renames):
-        """Move images from draft/assets to published/assets with new names"""
-        assets_dir = draft_dir / "assets"
-        if not assets_dir.exists():
-            return
-        
-        published_assets = published_dir / "assets"
-        if published_assets.exists():
-            shutil.rmtree(published_assets)
-        published_assets.mkdir(exist_ok=True)
-        
-        for img in image_renames:
-            old_img = assets_dir / Path(img['old_path']).name
-            if old_img.exists():
-                new_img = published_assets / img['new_name']
-                old_img.replace(new_img)
-        
-        # Cleanup empty assets dir
-        if assets_dir.exists() and not list(assets_dir.iterdir()):
-            assets_dir.rmdir()
-        
-        self.log(f"✓ Moved and renamed {len(image_renames)} images to published/assets/", force=True)
     
     def publish(self, draft_path):
         """Main publishing workflow"""
@@ -233,62 +207,72 @@ class BlogPublisher:
         # Generate filename
         filename = self.generate_filename(front_matter['title'])
         post_slug = filename[:-3]
-        self.log(f"✓ Generated filename: {filename}", force=True)
+        self.log(f"✓ Generated bundle: {post_slug}/", force=True)
+        
+        # Create page bundle directory
+        post_bundle_dir = self.content_dir / post_slug
+        if not self.dry_run:
+            post_bundle_dir.mkdir(parents=True, exist_ok=True)
         
         # Process images
         is_already_published = "published" in draft_path.parts
         draft_dir = draft_path.parent
         updated_body, image_count, image_renames = self.process_images(
-            draft_dir, body, post_slug, is_already_published
+            draft_dir, body, post_slug, post_bundle_dir, is_already_published
         )
         
-        # Write Hugo content
+        # Write Hugo content as index.md in bundle
         front_matter_yaml = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True)
         hugo_content = f"---\n{front_matter_yaml}---\n{updated_body}"
         
         if not self.dry_run:
-            (self.content_dir / filename).write_text(hugo_content, encoding='utf-8')
-            self.log(f"✓ Created: content/blog/{filename}", force=True)
+            (post_bundle_dir / "index.md").write_text(hugo_content, encoding='utf-8')
+            self.log(f"✓ Created: content/blog/{post_slug}/index.md", force=True)
         else:
-            self.log(f"[DRY RUN] Would create: content/blog/{filename}", force=True)
+            self.log(f"[DRY RUN] Would create: content/blog/{post_slug}/index.md", force=True)
         
-        # Handle source file in published folder
-        published_dir = draft_path.parent / "published"
-        published_path = published_dir / filename
+        # Handle source file in published folder (mirror bundle structure)
+        published_base = draft_path.parent / "published"
+        published_bundle = published_base / post_slug
+        published_index = published_bundle / "index.md"
         
         if not is_already_published:
             # First time publishing
             if not self.dry_run:
-                published_dir.mkdir(exist_ok=True)
+                published_bundle.mkdir(parents=True, exist_ok=True)
                 source_markdown = self.update_source_markdown(content, image_renames)
-                published_path.write_text(source_markdown, encoding='utf-8')
+                published_index.write_text(source_markdown, encoding='utf-8')
                 draft_path.unlink()
-                self.log(f"✓ Moved and renamed markdown: {draft_path.name} → {filename}", force=True)
+                self.log(f"✓ Moved to bundle: {draft_path.name} → {post_slug}/index.md", force=True)
                 
+                # Move images from assets/ to bundle folder
                 if image_renames:
-                    self.move_and_rename_images(draft_dir, published_dir, image_renames)
+                    assets_dir = draft_dir / "assets"
+                    for img in image_renames:
+                        old_img = assets_dir / Path(img['old_path']).name
+                        if old_img.exists():
+                            new_img = published_bundle / img['new_name']
+                            old_img.replace(new_img)
+                    # Cleanup empty assets dir
+                    if assets_dir.exists() and not list(assets_dir.iterdir()):
+                        assets_dir.rmdir()
+                    self.log(f"✓ Moved {len(image_renames)} images to {post_slug}/", force=True)
             else:
-                self.log(f"[DRY RUN] Would move draft to: {published_path}", force=True)
+                self.log(f"[DRY RUN] Would create bundle: {published_bundle}/", force=True)
         else:
             # Re-publishing
             if not self.dry_run:
                 source_markdown = self.update_source_markdown(content, image_renames)
+                published_index.write_text(source_markdown, encoding='utf-8')
                 
-                if draft_path.name != filename:
-                    published_path.write_text(source_markdown, encoding='utf-8')
-                    draft_path.unlink()
-                    self.log(f"✓ Renamed {draft_path.name} → {filename}", force=True)
-                else:
-                    draft_path.write_text(source_markdown, encoding='utf-8')
-                
-                # Rename images in assets if needed
-                if image_renames and (draft_path.parent / "assets").exists():
+                # Handle images in bundle
+                if image_renames:
                     for img in image_renames:
-                        old_img = draft_path.parent / "assets" / Path(img['old_path']).name
-                        new_img = draft_path.parent / "assets" / img['new_name']
+                        old_img = draft_path.parent / Path(img['old_path']).name
+                        new_img = published_bundle / img['new_name']
                         if old_img.exists() and old_img != new_img:
                             old_img.replace(new_img)
-                    self.log(f"✓ Renamed {len(image_renames)} images in published/assets/", force=True)
+                    self.log(f"✓ Renamed {len(image_renames)} images in bundle", force=True)
             
             self.log(f"✓ File already in published/ - regenerated output files", force=True)
         
@@ -297,10 +281,11 @@ class BlogPublisher:
         if self.dry_run:
             print("🔍 DRY RUN SUMMARY - No files were changed")
             print(f"\nWould create/modify:")
-            print(f"  📄 content/blog/{filename}")
+            print(f"  📁 content/blog/{post_slug}/")
+            print(f"     - index.md")
             if image_count > 0:
-                print(f"  📁 static/images/blog/{post_slug}/ ({image_count} images)")
-            print(f"  📦 {published_path} (moved from drafts)")
+                print(f"     - {image_count} images")
+            print(f"  📁 ~/Documents/Blog/published/{post_slug}/")
             print(f"\nRun without --dry-run to actually publish")
         else:
             self.log("✅ Publishing complete!", force=True)
@@ -309,9 +294,7 @@ class BlogPublisher:
             self.log(f"  1. Preview: hugo server -D", force=True)
             self.log(f"  2. Visit: http://localhost:1313/", force=True)
             self.log(f"  3. Commit when ready:", force=True)
-            self.log(f"     git add content/blog/{filename}", force=True)
-            if image_count > 0:
-                self.log(f"     git add static/images/blog/{post_slug}/", force=True)
+            self.log(f"     git add content/blog/{post_slug}/", force=True)
             self.log(f"     git commit -m \"Add blog post: {front_matter['title']}\"", force=True)
 
 
