@@ -27,7 +27,7 @@ summaryLength = 40
   path = 'page'
 
 [params]
-  description = "Blog based on Hugo SSG and Github pages"
+  description = "Tech stack: Coffee, Code, Curiosity"
   favicon = "images/favicon.png"
   subtitle = "Made with Hugo and ❤️"
   dateFormat = "2006-01-02"
@@ -107,6 +107,16 @@ summaryLength = 40
         name = "Mastodon"
         url = "https://chaos.social/@cloonix/"
         weight = 2
+
+    [[menu.footer]]
+        name = "Bluesky"
+        url = "https://bsky.app/profile/cloonix.bsky.social"
+        weight = 2.5
+
+    [[menu.footer]]
+        name = "Matrix"
+        url = "https://matrix.to/#/@cloonix:matrix.org"
+        weight = 2.7
 
     [[menu.footer]]
         name = "Imprint"
