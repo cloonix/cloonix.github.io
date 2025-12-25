@@ -337,7 +337,10 @@ class BlogPublisher:
                 # Write updated source markdown to published folder
                 with open(published_path, 'w', encoding='utf-8') as f:
                     f.write(source_markdown)
-                self.log(f"✓ Created published markdown: {published_path}", force=True)
+                
+                # Remove the original draft file
+                draft_path.unlink()
+                self.log(f"✓ Moved and renamed markdown: {draft_path.name} → {filename}", force=True)
                 
                 # Move assets folder if it exists and rename images there
                 assets_dir = draft_dir / "assets"
