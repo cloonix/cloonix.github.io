@@ -1,17 +1,9 @@
 ---
 title: "kopia: A new player on the backup field"
-date: 2024-12-29T12:00:17Z
+date: "2024-12-29T12:00:17Z"
 type: blog
 draft: false
-categories:
-  - howto
-tags:
-  - backup
-  - howto
-  - borg
-  - kopia
 ---
-
 I love backups. Most people who know me probably know that. And I love borgbackup [[1](https://www.borgbackup.org)]. I've been using borgbackup for many years and I still think it's the best backup tool in the open source world. And in my opinion it beats all commercial solutions as well, provided you have the technical know-how.
 
 BorgBackup, often referred to as borg, is a deduplicating backup program. It is designed to be efficient, secure, and versatile. Borg can:

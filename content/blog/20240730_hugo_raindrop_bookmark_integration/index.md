@@ -1,15 +1,20 @@
-+++
-title = 'Writing a Hugo Raindrop.io bookmark integration with AI'
-date = 2024-07-30T13:11:47Z
-tags = [ 'python', 'bookmarks', 'howto', 'blog', 'personal' ]
-categories = [ 'howto' ]
-type = "blog"
-series = ['hugo']
-toc = 1
-[params]
-  author = 'Claus Malter'
-+++
-
+---
+title: Writing a Hugo Raindrop.io bookmark integration with AI
+date: "2024-07-30T13:11:47Z"
+tags:
+  - python
+  - bookmarks
+  - howto
+  - blog
+  - personal
+categories:
+  - howto
+type: blog
+series:
+  - hugo
+toc: 1
+author: Claus Malter
+---
 [bacardi55](https://bacardi55.io/2024/02/13/bookmarks-section-the-pesos-way-kind-of/) [1] has an interesting bookmarks section on his blog, where a script generates Hugo markdown pages for bookmarks he has added to a central (self-hosted) bookmark manager. I found this very interesting and wanted to build something similar. I've been using [raindrop.io](https://raindrop.io) for some time now, and this service also provides an API. So this could be an easy project to do with the help of Github Copilot, which I have recently been using to give my software development projects a boost.  
 
 So here are my goals:

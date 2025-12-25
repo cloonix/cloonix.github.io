@@ -1,20 +1,9 @@
 ---
-title: "My personal AI recap of 2025 (Part 1)"
-date: 2025-12-22T16:02:17Z
+title: My personal AI recap of 2025 (Part 1)
+date: "2025-12-22T16:02:17Z"
 type: blog
 draft: false
-categories:
-  - personal
-tags:
-  - ai
-  - personal
-  - development
-  - github
-  - opensource
-  - projects
-  - llm
 ---
-
 2025 was one of the most transformative years for me since the COVID-19 pandemic and the year I became a father. It marked the rise of "Vibe Coding" and agentic workflows, opening up previously unimaginable possibilities. For me, it all began in early 2025 as I started to realize just how effective Vibe Coding could be. Previously, I had only occasionally used ChatGPT for simple Python scripts, but the arrival of specialized Visual Studio Code plugins gave the hype real momentum. This trend is clearly reflected in the [OpenRouter Rankings](https://openrouter.ai/rankings). While OpenRouter models aren't used exclusively for Vibe Coding, they were undoubtedly a primary driver in the early months of 2025. These rankings remain an excellent resource for tracking current trends.
 
 This period sparked a personal transformation that is still ongoing—one that has already reached a point where I write virtually no code manually anymore.

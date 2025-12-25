@@ -1,17 +1,11 @@
 ---
-title: "My macOS experience (an app collection)"
-date: 2024-09-22T07:38:25Z
+title: My macOS experience (an app collection)
+date: "2024-09-22T07:38:25Z"
 type: blog
 featured: 0
 draft: false
-categories:
-  - personal
-tags:
-  - macos
-  - personal
 toc: true
 ---
-
 Three weeks ago, my employer gave me a MacBook Pro to develop applications with Python and Large Language Models. This proved to be very tough on our Windows x86/x64 notebooks. However, my first steps with macOS were also tough. Up to that point, I had only worked with Linux and Windows desktops (and a brief detour to OS/2 back then). macOS was synonymous with "operating system for application development and design professionals" for me. I have to say, I was a little disappointed. Of course, a large part of my impression is due to my lack of experience with macOS, but in my opinion macOS is only usable after you have installed a dozen third-party applications (some are not free). Windows comes with most of that right out of the box with the PowerToys tools (free and open source).  
 
 The hardware of a MacBook is really first class. There's absolutely nothing to complain about. And that's why I somehow fell in love with it :wink:

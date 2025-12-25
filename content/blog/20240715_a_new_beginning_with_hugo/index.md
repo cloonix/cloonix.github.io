@@ -1,14 +1,20 @@
-+++
-title = 'A new beginning with Hugo'
-date = 2024-07-15T18:30:00Z
-author = 'Claus Malter'
-tags = ['hugo', 'linux', 'development', 'howto', 'markdown']
-categories = ['howto']
-type = "blog"
-series = ['hugo']
-toc = 1
-+++
-
+---
+title: A new beginning with Hugo
+date: "2024-07-15T18:30:00Z"
+author: Claus Malter
+tags:
+  - hugo
+  - linux
+  - development
+  - howto
+  - markdown
+categories:
+  - howto
+type: blog
+series:
+  - hugo
+toc: 1
+---
 While installing and building a site with Hugo is not rocket science, I wanted to share some notes on my first steps. Maybe this will become a series.
 
 You need 5 things before you can run Hugo. In my trials, brew.sh was the easiest way to install the prerequisites on Linux.  

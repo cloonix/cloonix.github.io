@@ -1,22 +1,9 @@
 ---
-title: "Keychron K8 Pro with vial-qmk support"
-date: 2024-08-17T17:01:20Z
+title: Keychron K8 Pro with vial-qmk support
+date: "2024-08-17T17:01:20Z"
 type: blog
 featured: 1
-categories:
-  - howto
-  - development
-tags:
-  - keychron
-  - keyboard
-  - qmk
-  - vial
-  - github
-  - bluetooth
-series:
-  - keychron
 ---
-
 A year ago I bought Keychron K8 Pro (RGB/ISO/DE). At that point I had zero experience with Keychron or with QMK [[1](https://qmk.fm/)]. QMK (Quantum Mechanical Keyboard) firmware is an open-source firmware for keyboards. It allows users to customize keymaps, macros, and various keyboard functionalities to suit their needs. QMK supports a wide range of keyboards and provides powerful features for advanced users. VIA [[2](https://www.caniusevia.com/)] is a graphical interface for QMK firmware that allows users to easily configure and customize their keyboards without needing to recompile the firmware. It provides a user-friendly way to manage keymaps, macros, and other settings in real-time.
 
 But in my oppinion the real power of QMK unleashes if you write your customizations directly with QMK and compile your firmware on your own, or you have a vial-qmk firmware. What, Vial? No typo. Vial [[3](https://get.vial.today/)] has even more possibilities compared to VIA and a good UI for making changes on the fly.

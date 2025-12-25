@@ -1,16 +1,8 @@
 ---
-title: "Vim extension for your web browser"
-date: 2024-08-07T20:11:12Z
+title: Vim extension for your web browser
+date: "2024-08-07T20:11:12Z"
 type: blog
-categories:
-  - recommendation
-tags:
-  - recommendation
-  - browser
-  - extension
-  - vim
 ---
-
 I'm trying to improve my vim skills every day, but I'm still not faster than using a regular editor in combination with my mouse. I really like the browser extension [vimium](https://vimium.github.io/) which is available for Chromium and Firefox.  
 
 The principle is simple. You press the "f" key, for example, and the open web page displays a selection of key combinations that (would) open the corresponding link. Then you type (for example) "ad" to open the underlying link.

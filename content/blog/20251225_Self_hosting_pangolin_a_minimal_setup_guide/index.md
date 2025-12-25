@@ -1,19 +1,9 @@
 ---
 title: "Self-hosting Pangolin: A minimal setup guide"
-date: 2025-12-25T09:33:24Z
+date: "2025-12-25T09:33:24Z"
 type: blog
 draft: false
-categories:
-  - self-hosting
-tags:
-  - pangolin
-  - networking
-  - security
-  - guide
-  - setup
-  - docker
 ---
-
 Pangolin is a powerful self-hosted platform for managing secure, zero-trust network access to your services.
 
 I switched from Cloudflare to Pangolin primarily due to (free-tier) limitations and performance issues. Also, I encountered consistent connectivity problems during peak hours, particularly in the evenings, caused by Telekom's peer routing policies. These delays and throttling resulted in slow load times and unreliable access. By moving to Pangolin, I gained full control over my infrastructure with no limits, improved routing through self-hosted WireGuard tunnels, and consistent performance.
