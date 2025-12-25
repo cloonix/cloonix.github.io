@@ -41,35 +41,30 @@ class BlogPublisher:
         if self.verbose or force:
             print(message)
     
-    def parse_front_matter(self, content):
-        """Extract YAML front matter from markdown content"""
-        yaml_pattern = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
-        match = re.match(yaml_pattern, content, re.DOTALL)
+    def parse_and_validate_front_matter(self, content):
+        """Extract and validate YAML front matter"""
+        match = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', content, re.DOTALL)
         
-        if match:
-            try:
-                return yaml.safe_load(match.group(1)), match.group(2)
-            except yaml.YAMLError as e:
-                raise ValueError(f"Invalid YAML front matter: {e}")
-        return None, content
-    
-    def validate_front_matter(self, front_matter):
-        """Validate required front matter fields"""
-        if not front_matter:
+        if not match:
             raise ValueError(
                 "No front matter found. Please add:\n"
                 "---\ntitle: \"Your Title\"\ncategories:\n  - cat1\ntags:\n  - tag1\n---"
             )
         
-        required = ['title', 'categories', 'tags']
-        missing = [f for f in required if f not in front_matter]
-        if missing:
-            raise ValueError(f"Missing required fields: {', '.join(missing)}")
+        try:
+            front_matter = yaml.safe_load(match.group(1))
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML front matter: {e}")
         
-        if not isinstance(front_matter['categories'], list):
-            raise ValueError("'categories' must be a list")
-        if not isinstance(front_matter['tags'], list):
-            raise ValueError("'tags' must be a list")
+        # Validate required fields
+        required = {'title': str, 'categories': list, 'tags': list}
+        for field, field_type in required.items():
+            if field not in front_matter:
+                raise ValueError(f"Missing required field: {field}")
+            if not isinstance(front_matter[field], field_type):
+                raise ValueError(f"'{field}' must be a {field_type.__name__}")
+        
+        return front_matter, match.group(2)
     
     def generate_filename(self, title):
         """Generate Hugo filename: YYYYMMDD_slug.md"""
@@ -203,7 +198,7 @@ class BlogPublisher:
             old_img = assets_dir / Path(img['old_path']).name
             if old_img.exists():
                 new_img = published_assets / img['new_name']
-                shutil.move(str(old_img), str(new_img))
+                old_img.replace(new_img)
         
         # Cleanup empty assets dir
         if assets_dir.exists() and not list(assets_dir.iterdir()):
@@ -226,8 +221,7 @@ class BlogPublisher:
         
         # Read and parse
         content = draft_path.read_text(encoding='utf-8')
-        front_matter, body = self.parse_front_matter(content)
-        self.validate_front_matter(front_matter)
+        front_matter, body = self.parse_and_validate_front_matter(content)
         self.log("✓ Front matter validated", force=True)
         
         # Update front matter
@@ -293,7 +287,7 @@ class BlogPublisher:
                         old_img = draft_path.parent / "assets" / Path(img['old_path']).name
                         new_img = draft_path.parent / "assets" / img['new_name']
                         if old_img.exists() and old_img != new_img:
-                            shutil.move(str(old_img), str(new_img))
+                            old_img.replace(new_img)
                     self.log(f"✓ Renamed {len(image_renames)} images in published/assets/", force=True)
             
             self.log(f"✓ File already in published/ - regenerated output files", force=True)
