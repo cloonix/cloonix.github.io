@@ -157,7 +157,7 @@ class BlogPublisher:
                 shutil.copy2(image_path, output_path)
             return False
     
-    def process_images(self, draft_dir, body_content, post_slug):
+    def process_images(self, draft_dir, body_content, post_slug, is_in_published=False):
         """Find, copy, optimize images and update markdown references"""
         # Create image directory for this post
         post_image_dir = self.images_dir / post_slug
@@ -193,8 +193,17 @@ class BlogPublisher:
             img_path_clean = img_path.strip()
             source_image = (draft_dir / img_path_clean).resolve()
             
+            # If not found and draft is in published/, check parent directory
+            if not source_image.exists() and is_in_published:
+                source_image_parent = (draft_dir.parent / img_path_clean).resolve()
+                if source_image_parent.exists():
+                    source_image = source_image_parent
+            
             if not source_image.exists():
                 print(f"⚠️  Warning: Image not found: {source_image}")
+                print(f"    (looked in {draft_dir / img_path_clean})")
+                if is_in_published:
+                    print(f"    (also tried {draft_dir.parent / img_path_clean})")
                 continue
             
             # Destination path
@@ -272,9 +281,12 @@ class BlogPublisher:
         
         self.log(f"✓ Generated filename: {filename}", force=True)
         
+        # Check if draft is already in published folder
+        is_already_published = "published" in draft_path.parts
+        
         # Process images
         draft_dir = draft_path.parent
-        updated_body, image_count = self.process_images(draft_dir, body, post_slug)
+        updated_body, image_count = self.process_images(draft_dir, body, post_slug, is_already_published)
         
         if image_count > 0:
             if self.dry_run:
@@ -296,9 +308,6 @@ class BlogPublisher:
         
         # Move draft to published folder
         published_dir = draft_path.parent / "published"
-        
-        # Check if draft is already in published folder
-        is_already_published = "published" in draft_path.parts
         
         if not is_already_published:
             if not self.dry_run:
