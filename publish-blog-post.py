@@ -347,14 +347,19 @@ class BlogPublisher:
                         shutil.rmtree(published_assets)
                     published_assets.mkdir(exist_ok=True)
                     
-                    # Copy and rename images to assets folder
+                    # Move and rename images to assets folder
                     for img_rename in image_renames:
                         old_img_path = assets_dir / Path(img_rename['old_path']).name
                         if old_img_path.exists():
                             new_img_path = published_assets / img_rename['new_name']
-                            shutil.copy2(str(old_img_path), str(new_img_path))
+                            shutil.move(str(old_img_path), str(new_img_path))
                     
-                    self.log(f"✓ Copied and renamed {len(image_renames)} images to published/assets/", force=True)
+                    # Remove old assets folder if it's now empty or has no other files
+                    remaining_files = list(assets_dir.iterdir())
+                    if not remaining_files:
+                        assets_dir.rmdir()
+                    
+                    self.log(f"✓ Moved and renamed {len(image_renames)} images to published/assets/", force=True)
             else:
                 self.log(f"[DRY RUN] Would move draft to: {published_dir / filename}", force=True)
         else:
