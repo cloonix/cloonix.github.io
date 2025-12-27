@@ -3,6 +3,14 @@ title: Tailscale subnet on a GLiNet Beryl AX (GL-MT3000)
 date: "2025-04-16T08:00:17Z"
 type: blog
 draft: false
+categories:
+  - howto
+tags:
+  - tailscale
+  - openwrt
+  - vpn
+  - glinet
+  - network
 ---
 [Tailscale](https://tailscale.com/) [1] has become my favorite solution for connecting my devices on different networks without the hassle of setting up dozens of WireGuard connections. Tailscale is a zero-configuration VPN service that uses WireGuard to create a secure mesh network between your devices. However, this blog post is not about Tailscale itself, but how to set up a Tailscale subnet on a GLiNet Beryl AX [3] router to make the Tailnet available to all connected clients. Note: It's not about making the subnet available to the tailnet (hosts).
 

@@ -3,6 +3,15 @@ title: "Self-hosting Pangolin: A minimal setup guide"
 date: "2025-12-25T09:33:24Z"
 type: blog
 draft: false
+categories:
+  - self-hosting
+tags:
+  - pangolin
+  - networking
+  - security
+  - guide
+  - setup
+  - docker
 ---
 Pangolin is a powerful self-hosted platform for managing secure, zero-trust network access to your services.
 

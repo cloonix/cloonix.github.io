@@ -3,6 +3,14 @@ title: Simple desktop switching with Autohotkey (Windows)
 date: "2025-01-29T16:00:17Z"
 type: blog
 draft: false
+categories:
+  - howto
+tags:
+  - windows
+  - desktop
+  - productivity
+  - development
+  - autohotkey
 ---
 Many years ago, I think it was in the 20th century 😉, Gnome in Linux already had virtual desktops and I loved them. In Windows there was no built-in solution afair/afaik. Most of you know what virtual desktops are, so here is only a short explanation: Virtual desktops are a software feature that allows you to organize and manage multiple desktop environments on a single computer. Essentially, they allow you to create several separate "workspaces" or "virtual screens" that you can switch between, even though you're still using the same physical monitor(s).
 
