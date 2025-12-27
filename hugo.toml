@@ -36,6 +36,7 @@ buildDrafts = false   # Don't publish posts with draft: true
   subtitle = "Made with Hugo and ❤️"
   dateFormat = "2006-01-02"
   mainSections = ['blog' ]
+  showContactFooter = true
 
   [permalinks]
     blog = "/:year/:month/:day/:title/"
