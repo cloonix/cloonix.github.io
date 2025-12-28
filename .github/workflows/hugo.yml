@@ -79,11 +79,45 @@ jobs:
           git commit -m "updated bookmarks"
           git push
 
+  # Check for scheduled posts ready to publish
+  check-scheduled-posts:
+    runs-on: ubuntu-latest
+    outputs:
+      has_posts: ${{ steps.check-posts.outputs.has_posts }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for posts ready to publish
+        id: check-posts
+        run: |
+          NOW=$(date -u +%s)
+          HAS_POSTS=false
+          
+          # Find all blog posts and check their dates
+          while IFS= read -r line; do
+            POST_DATE=$(echo "$line" | awk -F'date: "' '{if (NF>1) print $2}' | tr -d '"')
+            if [ -n "$POST_DATE" ]; then
+              POST_TIME=$(date -d "$POST_DATE" +%s 2>/dev/null || echo "0")
+              if [ "$POST_TIME" -gt 0 ] && [ "$POST_TIME" -le "$NOW" ]; then
+                HAS_POSTS=true
+                break
+              fi
+            fi
+          done < <(find content/blog -name "index.md" -exec grep -H "^date:" {} \;)
+          
+          echo "has_posts=$HAS_POSTS" >> $GITHUB_OUTPUT
+          if [ "$HAS_POSTS" = "true" ]; then
+            echo "Scheduled posts ready to publish"
+          else
+            echo "No scheduled posts ready to publish"
+          fi
+
   # Build job
   build:
     runs-on: ubuntu-latest
-    needs: update-bookmarks
-    if: needs.update-bookmarks.outputs.changes == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    needs: [update-bookmarks, check-scheduled-posts]
+    if: needs.update-bookmarks.outputs.changes == 'true' || needs.check-scheduled-posts.outputs.has_posts == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     env:
       HUGO_VERSION: 0.128.0
     steps:
@@ -126,8 +160,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [update-bookmarks, build]
-    if: needs.update-bookmarks.outputs.changes == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    needs: [update-bookmarks, check-scheduled-posts, build]
+    if: needs.update-bookmarks.outputs.changes == 'true' || needs.check-scheduled-posts.outputs.has_posts == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
