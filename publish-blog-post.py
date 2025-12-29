@@ -44,25 +44,132 @@ class BlogPublisher:
         match = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', content, re.DOTALL)
         
         if not match:
-            raise ValueError(
-                "No front matter found. Please add:\n"
-                "---\ntitle: \"Your Title\"\ncategories:\n  - cat1\ntags:\n  - tag1\n---"
-            )
+            # No frontmatter at all
+            return None, content
         
         try:
             front_matter = yaml.safe_load(match.group(1))
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML front matter: {e}")
         
-        # Validate required fields
-        required = {'title': str, 'categories': list, 'tags': list}
-        for field, field_type in required.items():
-            if field not in front_matter:
-                raise ValueError(f"Missing required field: {field}")
-            if not isinstance(front_matter[field], field_type):
-                raise ValueError(f"'{field}' must be a {field_type.__name__}")
-        
         return front_matter, match.group(2)
+    
+    def collect_frontmatter_interactive(self, existing=None):
+        """Interactively collect frontmatter from user"""
+        print("\n" + "="*60)
+        print("📝 Front Matter Collection")
+        print("="*60 + "\n")
+        
+        if existing:
+            print("Press Enter to keep existing value shown in brackets\n")
+        
+        frontmatter = {}
+        
+        # Title
+        default_title = existing.get('title', '') if existing else ''
+        while True:
+            if default_title:
+                title = input(f"Title [{default_title}]: ").strip()
+                if not title:
+                    title = default_title
+            else:
+                title = input("Title: ").strip()
+            
+            if title:
+                frontmatter['title'] = title
+                break
+            print("  ⚠️  Title is required!")
+        
+        # Date
+        now = datetime.utcnow()
+        default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
+        while True:
+            date_input = input(f"Date (press Enter for: {default_date}): ").strip()
+            if not date_input:
+                frontmatter['date'] = default_date
+                break
+            # Try to parse the date in exact format
+            try:
+                parsed = datetime.strptime(date_input, '%Y-%m-%dT%H:%M:%SZ')
+                frontmatter['date'] = parsed.strftime("%Y-%m-%dT%H:%M:%SZ")
+                break
+            except ValueError:
+                print("  ⚠️  Invalid date format. Use YYYY-MM-DDTHH:MM:SSZ or press Enter for default")
+        
+        # Type
+        frontmatter['type'] = 'blog'
+        print(f"Type: blog (default)")
+        
+        # Draft status
+        default_draft = existing.get('draft', False) if existing else False
+        while True:
+            draft_input = input(f"Draft? (true/false, default: {str(default_draft).lower()}): ").strip().lower()
+            if not draft_input:
+                frontmatter['draft'] = default_draft
+                break
+            elif draft_input == 'false':
+                frontmatter['draft'] = False
+                break
+            elif draft_input == 'true':
+                frontmatter['draft'] = True
+                break
+            print("  ⚠️  Please enter 'true' or 'false'")
+        
+        # Categories
+        default_categories = ', '.join(existing.get('categories', [])) if existing else ''
+        while True:
+            if default_categories:
+                categories_input = input(f"Categories (comma-separated) [{default_categories}]: ").strip()
+                if not categories_input:
+                    categories_input = default_categories
+            else:
+                categories_input = input("Categories (comma-separated): ").strip()
+            
+            if categories_input:
+                frontmatter['categories'] = [cat.strip() for cat in categories_input.split(',') if cat.strip()]
+                break
+            print("  ⚠️  At least one category is required!")
+        
+        # Tags
+        default_tags = ', '.join(existing.get('tags', [])) if existing else ''
+        while True:
+            if default_tags:
+                tags_input = input(f"Tags (comma-separated) [{default_tags}]: ").strip()
+                if not tags_input:
+                    tags_input = default_tags
+            else:
+                tags_input = input("Tags (comma-separated): ").strip()
+            
+            if tags_input:
+                frontmatter['tags'] = [tag.strip() for tag in tags_input.split(',') if tag.strip()]
+                break
+            print("  ⚠️  At least one tag is required!")
+        
+        return frontmatter
+    
+    def show_frontmatter_review(self, frontmatter):
+        """Display frontmatter for review"""
+        print("\n" + "="*60)
+        print("📋 Front Matter Review")
+        print("="*60 + "\n")
+        
+        yaml_str = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True, indent=2)
+        print("---")
+        print(yaml_str.rstrip())
+        print("---")
+        print()
+    
+    def confirm_proceed(self):
+        """Ask user to confirm before proceeding"""
+        while True:
+            response = input("Proceed with publishing? (yes/no/edit, default: no): ").strip().lower()
+            if response in ['yes', 'y']:
+                return 'yes'
+            elif response in ['no', 'n', '']:
+                return 'no'
+            elif response in ['edit', 'e']:
+                return 'edit'
+            print("  ⚠️  Please enter 'yes', 'no', or 'edit'")
     
     def generate_filename(self, title):
         """Generate Hugo filename: YYYYMMDD_slug.md"""
@@ -196,13 +303,72 @@ class BlogPublisher:
         # Read and parse
         content = draft_path.read_text(encoding='utf-8')
         front_matter, body = self.parse_and_validate_front_matter(content)
-        self.log("✓ Front matter validated", force=True)
         
-        # Update front matter
-        if 'date' not in front_matter:
-            front_matter['date'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        front_matter.setdefault('type', 'blog')
-        front_matter.setdefault('draft', False)
+        # Check if frontmatter is missing or incomplete
+        needs_interactive = False
+        if front_matter is None:
+            needs_interactive = True
+            self.log("ℹ️  No front matter found - will collect interactively", force=True)
+        else:
+            # Check for required fields
+            required = {'title': str, 'categories': list, 'tags': list}
+            missing_fields = []
+            for field, field_type in required.items():
+                if field not in front_matter:
+                    missing_fields.append(field)
+                elif not isinstance(front_matter[field], field_type):
+                    missing_fields.append(f"{field} (wrong type)")
+            
+            if missing_fields:
+                needs_interactive = True
+                self.log(f"ℹ️  Missing/invalid fields: {', '.join(missing_fields)}", force=True)
+            else:
+                self.log("✓ Front matter validated", force=True)
+        
+        # Collect frontmatter interactively if needed
+        if needs_interactive:
+            if self.dry_run:
+                print("\n⚠️  Cannot collect frontmatter interactively in dry-run mode")
+                print("   Please add frontmatter manually or run without --dry-run")
+                raise ValueError("Missing frontmatter in dry-run mode")
+            
+            front_matter = self.collect_frontmatter_interactive()
+            
+            # Update the content with new frontmatter
+            content = f"---\n{yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, indent=2)}---\n{body}"
+            
+            # Write back to source file
+            draft_path.write_text(content, encoding='utf-8')
+            self.log(f"✓ Added frontmatter to {draft_path.name}", force=True)
+        
+        # Ensure frontmatter is complete (should always be at this point)
+        if front_matter is None:
+            raise ValueError("Front matter is still None - this should not happen")
+        
+        # Ensure date, type, and draft fields are set (for existing frontmatter)
+        if not needs_interactive:
+            if 'date' not in front_matter:
+                front_matter['date'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            front_matter.setdefault('type', 'blog')
+            front_matter.setdefault('draft', False)
+        
+        # Show review and confirm (with edit loop)
+        while True:
+            self.show_frontmatter_review(front_matter)
+            if self.dry_run:
+                break
+            
+            response = self.confirm_proceed()
+            if response == 'yes':
+                break
+            elif response == 'no':
+                print("\n❌ Publishing cancelled by user")
+                sys.exit(0)
+            elif response == 'edit':
+                # Re-collect all frontmatter with existing values as defaults
+                front_matter = self.collect_frontmatter_interactive(existing=front_matter)
+                # Ensure type is always blog
+                front_matter['type'] = 'blog'
         
         # Generate filename
         filename = self.generate_filename(front_matter['title'])
@@ -222,7 +388,7 @@ class BlogPublisher:
         )
         
         # Write Hugo content as index.md in bundle
-        front_matter_yaml = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True)
+        front_matter_yaml = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, indent=2)
         hugo_content = f"---\n{front_matter_yaml}---\n{updated_body}"
         
         if not self.dry_run:

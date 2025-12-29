@@ -1,16 +1,16 @@
 ---
-categories:
-- Personal
-date: '2025-12-29T09:45:46Z'
-draft: false
-tags:
-- ai
-- personal
-- life
-- blog
-- opinion
-title: The fear of writing on my own blog
-type: blog
+  categories:
+    - Personal
+  date: '2025-12-29T08:45:46Z'
+  draft: false
+  tags:
+    - ai
+    - personal
+    - life
+    - blog
+    - opinion
+  title: The fear of writing on my own blog
+  type: blog
 ---
 # The fear of writing on my own blog
 
@@ -30,13 +30,14 @@ With that in mind, my primary intention for the upcoming year is simple: **write
 
 To make this sustainable, I am setting a few ground rules for myself to keep the imposter syndrome at bay:
 
-*   **Keep it concise:** I don't need to write a manifesto. Short, interesting posts are often more valuable than long ones.
-*   **Follow the excitement:** If I am excited about a specific technology or a clever fix, it is almost a guarantee that someone else will find it exciting, too.
-*   **Sharing is caring:** The tech community is based on shared knowledge. Contributing to that pool is a positive act, regardless of the scale.
-*   **The "One Person" Rule:** There is always someone out there who hasn't encountered that specific solution yet. If my post helps just one person save an hour of debugging, it was worth writing.
-*   **Lower the stakes:** You don't have to write to win a Nobel Prize. It’s a blog post, not a thesis.
+* **Keep it concise:** I don't need to write a manifesto. Short, interesting posts are often more valuable than long ones.
+* **Follow the excitement:** If I am excited about a specific technology or a clever fix, it is almost a guarantee that someone else will find it exciting, too.
+* **Sharing is caring:** The tech community is based on shared knowledge. Contributing to that pool is a positive act, regardless of the scale.
+* **The "One Person" Rule:** There is always someone out there who hasn't encountered that specific solution yet. If my post helps just one person save an hour of debugging, it was worth writing.
+* **Lower the stakes:** You don't have to write to win a Nobel Prize. It’s a blog post, not a thesis.
 
 ## But... What About AI?
+
 Looking back over the past two years, I find myself asking an obvious question:
 
 > *Why should I bother writing if an AI can generate a similar output in seconds?*
@@ -48,8 +49,7 @@ AI can tell you how a library *should* work according to the documentation; a hu
 At least, I hope this remains true for the foreseeable future.
 
 ## Conclusion
+
 If you have been holding back your thoughts because you feel your work isn't "interesting" enough, I hope you’ll join me in this resolution. We don't need to be geniuses or have infinite free time to contribute. We just need to share what we know.
 
 Here is to a year of writing more, worrying less, and valuing our own experiences.
-
-
