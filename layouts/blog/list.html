@@ -1,0 +1,27 @@
+{{ define "main" }}
+<main>
+	<article>
+		{{ $listtitle := .Title }}
+		{{ if or .Title .Content }}
+		<div>
+			{{ with .Title }}<h1>{{ . }}</h1>{{ end }}
+			{{ with .Content }}<div>{{ . }}</div>{{ end }}
+		</div>
+		{{ end }}
+
+		<ul>
+			{{ range .Pages.ByDate.Reverse }}
+			<li>
+				<div class="post-title">
+					{{ if ne $.Kind "taxonomy" }}
+					<time>{{ .Date.Format "2006-01-02" }}</time> <a href="{{ .RelPermalink }}">{{.Title }}</a>
+					{{ else }}
+					<a href="{{ .RelPermalink }}">{{.Title }}</a>
+					{{ end }}
+				</div>
+			</li>
+			{{ end }}
+		</ul>
+	</article>
+</main>
+{{ end }}
