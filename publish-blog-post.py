@@ -52,7 +52,12 @@ class BlogPublisher:
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML front matter: {e}")
         
-        return front_matter, match.group(2)
+        body = match.group(2)
+        
+        # Remove first H1 heading if present (theme will render title)
+        body = re.sub(r'^\s*#\s+[^\n]+\n+', '', body, count=1)
+        
+        return front_matter, body
     
     def collect_frontmatter_interactive(self, existing=None):
         """Interactively collect frontmatter from user"""
