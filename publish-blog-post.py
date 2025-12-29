@@ -22,6 +22,47 @@ from PIL import Image
 import yaml
 
 
+class FrontmatterValidator:
+    """Validates and ensures frontmatter completeness"""
+    
+    REQUIRED_FIELDS = {
+        'title': str,
+        'categories': list,
+        'tags': list,
+    }
+    
+    DEFAULTS = {
+        'type': 'blog',
+        'draft': False,
+    }
+    
+    @classmethod
+    def validate(cls, frontmatter):
+        """Returns (is_valid, missing_fields)"""
+        if not frontmatter:
+            return False, ['all fields (no frontmatter)']
+        
+        missing = []
+        for field, expected_type in cls.REQUIRED_FIELDS.items():
+            if field not in frontmatter:
+                missing.append(field)
+            elif not isinstance(frontmatter[field], expected_type):
+                missing.append(f"{field} (wrong type)")
+        
+        return len(missing) == 0, missing
+    
+    @classmethod
+    def ensure_complete(cls, frontmatter):
+        """Add missing non-required fields with defaults"""
+        if 'date' not in frontmatter:
+            frontmatter['date'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        
+        for field, default in cls.DEFAULTS.items():
+            frontmatter.setdefault(field, default)
+        
+        return frontmatter
+
+
 class BlogPublisher:
     def __init__(self, hugo_root, max_image_width=1920, dry_run=False, verbose=False):
         self.hugo_root = Path(hugo_root)
@@ -39,13 +80,76 @@ class BlogPublisher:
         if self.verbose or force:
             print(message)
     
+    def extract_h1_title(self, body):
+        """Extract first H1 heading from body"""
+        match = re.match(r'^\s*#\s+(.+?)(?:\n|$)', body, re.MULTILINE)
+        return match.group(1).strip() if match else None
+    
+    def get_suggestions_from_existing_posts(self):
+        """Scan existing posts and return common categories/tags"""
+        from collections import Counter
+        
+        categories = Counter()
+        tags = Counter()
+        
+        # Scan all existing blog posts
+        for md_file in self.content_dir.glob('*/index.md'):
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                if content.startswith('---'):
+                    end = content.find('---', 3)
+                    if end > 0:
+                        fm = yaml.safe_load(content[3:end])
+                        if fm:
+                            # Collect categories
+                            if 'categories' in fm and isinstance(fm['categories'], list):
+                                for cat in fm['categories']:
+                                    if cat:
+                                        categories[str(cat).lower()] += 1
+                            # Collect tags
+                            if 'tags' in fm and isinstance(fm['tags'], list):
+                                for tag in fm['tags']:
+                                    if tag:
+                                        tags[str(tag).lower()] += 1
+            except Exception:
+                # Skip posts that can't be parsed
+                continue
+        
+        # Return top 5 categories and top 10 tags
+        top_categories = [cat for cat, _ in categories.most_common(5)]
+        top_tags = [tag for tag, _ in tags.most_common(10)]
+        
+        return {
+            'categories': top_categories,
+            'tags': top_tags
+        }
+    
+    def parse_flexible_date(self, date_str):
+        """Parse date from multiple formats and return ISO format"""
+        date_str = date_str.strip()
+        
+        formats = [
+            ('%Y-%m-%dT%H:%M:%SZ', lambda d: d.strftime("%Y-%m-%dT%H:%M:%SZ")),
+            ('%Y-%m-%d', lambda d: d.strftime("%Y-%m-%dT00:00:00Z")),
+            ('%Y-%m-%d %H:%M', lambda d: d.strftime("%Y-%m-%dT%H:%M:00Z")),
+        ]
+        
+        for fmt, formatter in formats:
+            try:
+                return formatter(datetime.strptime(date_str, fmt))
+            except ValueError:
+                continue
+        
+        return None
+    
     def parse_and_validate_front_matter(self, content):
         """Extract and validate YAML front matter"""
         match = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', content, re.DOTALL)
         
         if not match:
             # No frontmatter at all
-            return None, content
+            extracted_title = self.extract_h1_title(content)
+            return None, content, extracted_title
         
         try:
             front_matter = yaml.safe_load(match.group(1))
@@ -54,13 +158,108 @@ class BlogPublisher:
         
         body = match.group(2)
         
+        # Extract H1 title before removing it
+        extracted_title = self.extract_h1_title(body)
+        
         # Remove first H1 heading if present (theme will render title)
         body = re.sub(r'^\s*#\s+[^\n]+\n+', '', body, count=1)
         
-        return front_matter, body
+        return front_matter, body, extracted_title
     
-    def collect_frontmatter_interactive(self, existing=None):
+    def _collect_text_field(self, field_name, default='', required=True, step_info=None, hint=None):
+        """Collect a single text field with validation"""
+        if step_info:
+            print(f"\n[{step_info}/{5}] {field_name}")
+        
+        if hint:
+            print(f"  {hint}")
+        
+        while True:
+            prompt = f"  Enter {field_name.lower()}"
+            if default:
+                prompt += f" [{default}]"
+            prompt += ": "
+            
+            value = input(prompt).strip()
+            if not value and default:
+                value = default
+            
+            if value or not required:
+                return value
+            
+            print(f"  ⚠️  {field_name} is required!")
+    
+    def _collect_list_field(self, field_name, default_list=None, required=True, step_info=None, suggestions=None):
+        """Collect a comma-separated list field with lowercase normalization"""
+        if step_info:
+            print(f"\n[{step_info}/{5}] {field_name} (lowercase, comma-separated)")
+        
+        if suggestions:
+            print(f"  Suggestions: {', '.join(suggestions)}")
+        
+        default_str = ', '.join(default_list) if default_list else ''
+        
+        while True:
+            prompt = f"  Enter {field_name.lower()}"
+            if default_str:
+                prompt += f" [{default_str}]"
+            prompt += ": "
+            
+            value = input(prompt).strip()
+            if not value and default_str:
+                value = default_str
+            
+            if value:
+                return [item.strip().lower() for item in value.split(',') if item.strip()]
+            
+            if not required:
+                return []
+            
+            print(f"  ⚠️  At least one {field_name.lower()} is required!")
+    
+    def _collect_bool_field(self, question, default=True, step_info=None):
+        """Collect a yes/no field"""
+        if step_info:
+            print(f"\n[{step_info}/{5}] {question}")
+        
+        while True:
+            prompt = f"  {question} (y/n, default: {'y' if default else 'n'}): "
+            value = input(prompt).strip().lower()
+            
+            if not value:
+                return default
+            elif value in ['y', 'yes']:
+                return True
+            elif value in ['n', 'no']:
+                return False
+            
+            print("  ⚠️  Please enter 'y' or 'n'")
+    
+    def _collect_date_field(self, existing=None, step_info=None):
+        """Collect date field with flexible parsing"""
+        if step_info:
+            print(f"\n[{step_info}/{5}] Date")
+        
+        now = datetime.utcnow()
+        default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
+        human_date = now.strftime('%Y-%m-%d %H:%M UTC')
+        
+        while True:
+            date_input = input(f"  Press Enter for now ({human_date}), or enter custom date: ").strip()
+            if not date_input:
+                return default_date
+            
+            parsed_date = self.parse_flexible_date(date_input)
+            if parsed_date:
+                return parsed_date
+            
+            print("  ⚠️  Invalid date format. Try: YYYY-MM-DD or YYYY-MM-DD HH:MM or YYYY-MM-DDTHH:MM:SSZ")
+    
+    def collect_frontmatter_interactive(self, existing=None, extracted_title=None, suggestions=None):
         """Interactively collect frontmatter from user"""
+        if suggestions is None:
+            suggestions = {'categories': [], 'tags': []}
+        
         print("\n" + "="*60)
         print("📝 Front Matter Collection")
         print("="*60 + "\n")
@@ -68,87 +267,35 @@ class BlogPublisher:
         if existing:
             print("Press Enter to keep existing value shown in brackets\n")
         
-        frontmatter = {}
+        # Determine default title (priority: existing > extracted H1 > none)
+        default_title = existing.get('title', '') if existing else (extracted_title or '')
+        hint = f"✓ Detected from H1: \"{extracted_title}\"" if extracted_title and not existing else None
         
-        # Title
-        default_title = existing.get('title', '') if existing else ''
-        while True:
-            if default_title:
-                title = input(f"Title [{default_title}]: ").strip()
-                if not title:
-                    title = default_title
-            else:
-                title = input("Title: ").strip()
-            
-            if title:
-                frontmatter['title'] = title
-                break
-            print("  ⚠️  Title is required!")
+        # Collect all fields
+        frontmatter = {
+            'title': self._collect_text_field('Title', default_title, required=True, step_info=1, hint=hint),
+            'date': self._collect_date_field(existing, step_info=2),
+            'categories': self._collect_list_field(
+                'Categories', 
+                existing.get('categories', []) if existing else [], 
+                required=True, 
+                step_info=4, 
+                suggestions=suggestions['categories']
+            ),
+            'tags': self._collect_list_field(
+                'Tags', 
+                existing.get('tags', []) if existing else [], 
+                required=True, 
+                step_info=5, 
+                suggestions=suggestions['tags']
+            ),
+            'type': 'blog',
+        }
         
-        # Date
-        now = datetime.utcnow()
-        default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
-        while True:
-            date_input = input(f"Date (press Enter for: {default_date}): ").strip()
-            if not date_input:
-                frontmatter['date'] = default_date
-                break
-            # Try to parse the date in exact format
-            try:
-                parsed = datetime.strptime(date_input, '%Y-%m-%dT%H:%M:%SZ')
-                frontmatter['date'] = parsed.strftime("%Y-%m-%dT%H:%M:%SZ")
-                break
-            except ValueError:
-                print("  ⚠️  Invalid date format. Use YYYY-MM-DDTHH:MM:SSZ or press Enter for default")
-        
-        # Type
-        frontmatter['type'] = 'blog'
-        print(f"Type: blog (default)")
-        
-        # Draft status
-        default_draft = existing.get('draft', False) if existing else False
-        while True:
-            draft_input = input(f"Draft? (true/false, default: {str(default_draft).lower()}): ").strip().lower()
-            if not draft_input:
-                frontmatter['draft'] = default_draft
-                break
-            elif draft_input == 'false':
-                frontmatter['draft'] = False
-                break
-            elif draft_input == 'true':
-                frontmatter['draft'] = True
-                break
-            print("  ⚠️  Please enter 'true' or 'false'")
-        
-        # Categories
-        default_categories = ', '.join(existing.get('categories', [])) if existing else ''
-        while True:
-            if default_categories:
-                categories_input = input(f"Categories (comma-separated) [{default_categories}]: ").strip()
-                if not categories_input:
-                    categories_input = default_categories
-            else:
-                categories_input = input("Categories (comma-separated): ").strip()
-            
-            if categories_input:
-                frontmatter['categories'] = [cat.strip() for cat in categories_input.split(',') if cat.strip()]
-                break
-            print("  ⚠️  At least one category is required!")
-        
-        # Tags
-        default_tags = ', '.join(existing.get('tags', [])) if existing else ''
-        while True:
-            if default_tags:
-                tags_input = input(f"Tags (comma-separated) [{default_tags}]: ").strip()
-                if not tags_input:
-                    tags_input = default_tags
-            else:
-                tags_input = input("Tags (comma-separated): ").strip()
-            
-            if tags_input:
-                frontmatter['tags'] = [tag.strip() for tag in tags_input.split(',') if tag.strip()]
-                break
-            print("  ⚠️  At least one tag is required!")
+        # Draft status (inverted logic: asking about publish, storing as draft)
+        default_publish = not existing.get('draft', False) if existing else True
+        publish_now = self._collect_bool_field('Publish immediately?', default=default_publish, step_info=3)
+        frontmatter['draft'] = not publish_now
         
         return frontmatter
     
@@ -307,7 +454,10 @@ class BlogPublisher:
         
         # Read and parse
         content = draft_path.read_text(encoding='utf-8')
-        front_matter, body = self.parse_and_validate_front_matter(content)
+        front_matter, body, extracted_title = self.parse_and_validate_front_matter(content)
+        
+        # Get suggestions for categories and tags
+        suggestions = self.get_suggestions_from_existing_posts()
         
         # Check if frontmatter is missing or incomplete
         needs_interactive = False
@@ -315,20 +465,25 @@ class BlogPublisher:
             needs_interactive = True
             self.log("ℹ️  No front matter found - will collect interactively", force=True)
         else:
-            # Check for required fields
-            required = {'title': str, 'categories': list, 'tags': list}
-            missing_fields = []
-            for field, field_type in required.items():
-                if field not in front_matter:
-                    missing_fields.append(field)
-                elif not isinstance(front_matter[field], field_type):
-                    missing_fields.append(f"{field} (wrong type)")
+            # Validate frontmatter using validator class
+            is_valid, missing_fields = FrontmatterValidator.validate(front_matter)
             
-            if missing_fields:
+            if not is_valid:
                 needs_interactive = True
                 self.log(f"ℹ️  Missing/invalid fields: {', '.join(missing_fields)}", force=True)
             else:
-                self.log("✓ Front matter validated", force=True)
+                # All required fields present - offer streamlined mode
+                if not self.dry_run:
+                    self.log("✓ Front matter validated", force=True)
+                    self.show_frontmatter_review(front_matter)
+                    response = input("\nKeep existing frontmatter? (y/n, default: yes): ").strip().lower()
+                    if response in ['n', 'no']:
+                        needs_interactive = True
+                        self.log("\nℹ️  Entering interactive mode to edit frontmatter", force=True)
+                    else:
+                        self.log("✓ Using existing frontmatter", force=True)
+                else:
+                    self.log("✓ Front matter validated", force=True)
         
         # Collect frontmatter interactively if needed
         if needs_interactive:
@@ -337,7 +492,11 @@ class BlogPublisher:
                 print("   Please add frontmatter manually or run without --dry-run")
                 raise ValueError("Missing frontmatter in dry-run mode")
             
-            front_matter = self.collect_frontmatter_interactive()
+            front_matter = self.collect_frontmatter_interactive(
+                existing=front_matter,
+                extracted_title=extracted_title,
+                suggestions=suggestions
+            )
             
             # Update the content with new frontmatter
             content = f"---\n{yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, indent=2)}---\n{body}"
@@ -350,12 +509,9 @@ class BlogPublisher:
         if front_matter is None:
             raise ValueError("Front matter is still None - this should not happen")
         
-        # Ensure date, type, and draft fields are set (for existing frontmatter)
+        # Ensure date, type, and draft fields are set using validator
         if not needs_interactive:
-            if 'date' not in front_matter:
-                front_matter['date'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-            front_matter.setdefault('type', 'blog')
-            front_matter.setdefault('draft', False)
+            front_matter = FrontmatterValidator.ensure_complete(front_matter)
         
         # Show review and confirm (with edit loop)
         while True:
@@ -371,7 +527,11 @@ class BlogPublisher:
                 sys.exit(0)
             elif response == 'edit':
                 # Re-collect all frontmatter with existing values as defaults
-                front_matter = self.collect_frontmatter_interactive(existing=front_matter)
+                front_matter = self.collect_frontmatter_interactive(
+                    existing=front_matter,
+                    extracted_title=extracted_title,
+                    suggestions=suggestions
+                )
                 # Ensure type is always blog
                 front_matter['type'] = 'blog'
         

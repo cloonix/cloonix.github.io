@@ -1,16 +1,16 @@
 ---
-title: logseq with syncthing and/or git
-date: "2024-08-29T13:01:38Z"
-type: blog
-draft: false
 categories:
-  - Howto
+- howto
+date: '2024-08-29T13:01:38Z'
+draft: false
 tags:
-  - logseq
-  - obsidian
-  - syncthing
-  - git
-  - dev
+- logseq
+- obsidian
+- syncthing
+- git
+- dev
+title: logseq with syncthing and/or git
+type: blog
 ---
 Recently, I fell in love with [logseq](https://logseq.com/) [1]. At first glance, logseq confused me and didn't convince me. Later, after reading some articles and watching some videos, we became a couple :wink:
 

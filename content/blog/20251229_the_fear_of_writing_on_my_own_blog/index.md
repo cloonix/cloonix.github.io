@@ -1,16 +1,16 @@
 ---
-  categories:
-    - Personal
-  date: '2025-12-29T08:45:46Z'
-  draft: false
-  tags:
-    - ai
-    - personal
-    - life
-    - blog
-    - opinion
-  title: The fear of writing on my own blog
-  type: blog
+categories:
+- personal
+date: '2025-12-29T08:45:46Z'
+draft: false
+tags:
+- ai
+- personal
+- life
+- blog
+- opinion
+title: The fear of writing on my own blog
+type: blog
 ---
 
 I have always loved technical blogs. There is something admirable about people who possess the creativity, discipline, and knowledge to regularly publish content. Looking at my RSS feed, I often envy the writers who seem to effortlessly share their wisdom with the world.
