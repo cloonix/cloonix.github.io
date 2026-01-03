@@ -17,7 +17,7 @@ import re
 import shutil
 import argparse
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from PIL import Image
 import yaml
 
@@ -55,7 +55,7 @@ class FrontmatterValidator:
     def ensure_complete(cls, frontmatter):
         """Add missing non-required fields with defaults"""
         if 'date' not in frontmatter:
-            frontmatter['date'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            frontmatter['date'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         for field, default in cls.DEFAULTS.items():
             frontmatter.setdefault(field, default)
@@ -240,7 +240,7 @@ class BlogPublisher:
         if step_info:
             print(f"\n[{step_info}/{5}] Date")
         
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
         human_date = now.strftime('%Y-%m-%d %H:%M UTC')
         
@@ -563,9 +563,15 @@ class BlogPublisher:
             self.log(f"[DRY RUN] Would create: content/blog/{post_slug}/index.md", force=True)
         
         # Handle source file in published folder (mirror bundle structure)
-        published_base = draft_path.parent / "published"
-        published_bundle = published_base / post_slug
-        published_index = published_bundle / "index.md"
+        if is_already_published:
+            # Already in published folder, use current structure
+            published_bundle = draft_path.parent
+            published_index = draft_path
+        else:
+            # Not in published folder yet, create path
+            published_base = draft_path.parent / "published"
+            published_bundle = published_base / post_slug
+            published_index = published_bundle / "index.md"
         
         if not is_already_published:
             # First time publishing
@@ -624,9 +630,10 @@ class BlogPublisher:
             self.log("Next steps:", force=True)
             self.log(f"  1. Preview: hugo server -D", force=True)
             self.log(f"  2. Visit: http://localhost:1313/", force=True)
-            self.log(f"  3. Commit when ready:", force=True)
+            self.log(f"  3. Commit and push when ready:", force=True)
             self.log(f"     git add content/blog/{post_slug}/", force=True)
-            self.log(f"     git commit -m \"Add blog post: {front_matter['title']}\"", force=True)
+            self.log(f"     git commit -m 'Add blog post: {front_matter['title']}'", force=True)
+            self.log(f"     git push", force=True)
 
 
 def main():
