@@ -13,8 +13,6 @@ tags:
 title: 'Building a "Service Hub": One Tool, Three Ways to Use It'
 type: blog
 ---
-# Building a "Service Hub": One Tool, Three Ways to Use It
-
 I’ve been wrestling with a common dilemma lately: what’s the best way to build a tool when you need to access it from completely different environments?
 
 Take my YouTube transcript downloader, for example. I don't use it in just one way. Sometimes I’m in the terminal and want a quick CLI command. Other times, I need it as an API for a web project. Lately, I’ve been wanting to plug it directly into my LLMs using the Model Context Protocol (MCP). This latter case is becoming an increasingly common requirement—not just for the transcript downloader, but for many other tools as well.
