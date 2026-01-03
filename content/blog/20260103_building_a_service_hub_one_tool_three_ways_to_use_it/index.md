@@ -47,8 +47,8 @@ If you are interested in my first build, you can find it on GitHub: [service-hub
 
 ## Sources
 
-[1] FastAPI Documentation - <https://fastapi.tiangolo.com/>
-[2] FastMCP GitHub Repository - <https://github.com/jlowin/fastmcp>
-[3] Tailscale - <https://tailscale.com/>
-[4] Service-hub - <https://github.com/cloonix/service-hub>
-[5] fabric-ai - <https://github.com/danielmiessler/fabric>
+[1] FastAPI Documentation - <https://fastapi.tiangolo.com/>  
+[2] FastMCP GitHub Repository - <https://github.com/jlowin/fastmcp>  
+[3] Tailscale - <https://tailscale.com/>  
+[4] Service-hub - <https://github.com/cloonix/service-hub>  
+[5] fabric-ai - <https://github.com/danielmiessler/fabric>  
