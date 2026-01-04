@@ -245,7 +245,8 @@ class BlogPublisher:
         human_date = now.strftime('%Y-%m-%d %H:%M UTC')
         
         while True:
-            date_input = input(f"  Press Enter for now ({human_date}), or enter custom date: ").strip()
+            print(f"  Example: 2026-01-15 14:30")
+            date_input = input(f"  Press Enter for now ({human_date}), or enter date: ").strip()
             if not date_input:
                 return default_date
             
@@ -253,7 +254,7 @@ class BlogPublisher:
             if parsed_date:
                 return parsed_date
             
-            print("  ⚠️  Invalid date format. Try: YYYY-MM-DD or YYYY-MM-DD HH:MM or YYYY-MM-DDTHH:MM:SSZ")
+            print("  ⚠️  Invalid date format. Try: YYYY-MM-DD HH:MM")
     
     def collect_frontmatter_interactive(self, existing=None, extracted_title=None, suggestions=None):
         """Interactively collect frontmatter from user"""
@@ -323,12 +324,14 @@ class BlogPublisher:
                 return 'edit'
             print("  ⚠️  Please enter 'yes', 'no', or 'edit'")
     
-    def generate_filename(self, title):
+    def generate_filename(self, title, date_str):
         """Generate Hugo filename: YYYYMMDD_slug.md"""
-        date_str = datetime.now().strftime("%Y%m%d")
+        # Parse the date string to extract YYYYMMDD
+        # date_str is in format: YYYY-MM-DDTHH:MM:SSZ
+        date_prefix = date_str[:10].replace('-', '')  # Extract YYYYMMDD
         slug = re.sub(r'[^\w\s-]', '', title.lower())
         slug = re.sub(r'[-\s]+', '_', slug).strip('_')
-        return f"{date_str}_{slug}.md"
+        return f"{date_prefix}_{slug}.md"
     
     def optimize_image(self, source, dest):
         """Resize and optimize image"""
@@ -536,7 +539,7 @@ class BlogPublisher:
                 front_matter['type'] = 'blog'
         
         # Generate filename
-        filename = self.generate_filename(front_matter['title'])
+        filename = self.generate_filename(front_matter['title'], front_matter['date'])
         post_slug = filename[:-3]
         self.log(f"✓ Generated bundle: {post_slug}/", force=True)
         
