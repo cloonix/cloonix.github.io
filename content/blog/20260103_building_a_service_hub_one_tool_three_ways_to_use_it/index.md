@@ -15,13 +15,13 @@ type: blog
 ---
 I’ve been wrestling with a common dilemma lately: what’s the best way to build a tool when you need to access it from completely different environments?
 
-Take my YouTube transcript downloader, for example. I don't use it in just one way. Sometimes I’m in the terminal and want a quick CLI command. Other times, I need it as an API for a web project. Lately, I’ve been wanting to plug it directly into my LLMs using the Model Context Protocol (MCP). This latter case is becoming an increasingly common requirement—not just for the transcript downloader, but for many other tools as well.
+Take my YouTube transcript downloader, for example. I don't use it in just one way. Sometimes I’m in the terminal and want a quick CLI command. Other times, I need it as an API for a web project. Lately, I’ve been wanting to plug it directly into my LLMs using the Model Context Protocol (MCP). This latter case is becoming an increasingly common requirement, not just for the transcript downloader, but for many other tools as well.
 
 I didn't want to maintain three different versions of the same logic. I wanted one "source of truth" that could serve all three purposes. I’m calling this first draft a "(LLM) Service Hub," and while I got it working, the journey was a bit more complex than I expected.
 
 ## The Architecture: FastAPI meets FastMCP
 
-The goal was simple: minimal effort to deploy new tools across different interfaces. The reality? It took me nearly a day of prompt engineering to get the base template right, even with significant help from OpenCode and Claude 3.5 Sonnet.
+The goal was simple: minimal effort to deploy new tools across different interfaces. The reality? It took me nearly a day of prompt engineering to get the base template right, even with significant help from OpenCode and Claude 4.5 Sonnet.
 
 I ended up with a setup that feels like a Swiss Army knife. The core logic lives in a shared Python library, which I wrap in three ways:
 
