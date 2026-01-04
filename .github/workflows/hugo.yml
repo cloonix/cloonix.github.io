@@ -94,8 +94,14 @@ jobs:
           NOW=$(date -u +%s)
           HAS_POSTS=false
           
-          # Find all blog posts and check their dates
+          # Find all blog posts and collect their dates first (avoids broken pipe)
+          DATE_LINES=$(find content/blog -name "index.md" -exec grep -H "^date:" {} \; 2>/dev/null || true)
+          
+          # Check each date line
           while IFS= read -r line; do
+            if [ -z "$line" ]; then
+              continue
+            fi
             POST_DATE=$(echo "$line" | awk -F'date: "' '{if (NF>1) print $2}' | tr -d '"')
             if [ -n "$POST_DATE" ]; then
               POST_TIME=$(date -d "$POST_DATE" +%s 2>/dev/null || echo "0")
@@ -104,7 +110,7 @@ jobs:
                 break
               fi
             fi
-          done < <(find content/blog -name "index.md" -exec grep -H "^date:" {} \;)
+          done <<< "$DATE_LINES"
           
           echo "has_posts=$HAS_POSTS" >> $GITHUB_OUTPUT
           if [ "$HAS_POSTS" = "true" ]; then
