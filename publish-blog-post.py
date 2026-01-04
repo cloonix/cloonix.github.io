@@ -124,6 +124,44 @@ class BlogPublisher:
             'tags': top_tags
         }
     
+    def get_future_scheduled_posts(self):
+        """Find posts scheduled in the future"""
+        now = datetime.now(timezone.utc)
+        future_posts = []
+        
+        # Scan all existing blog posts
+        for md_file in self.content_dir.glob('*/index.md'):
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                if content.startswith('---'):
+                    end = content.find('---', 3)
+                    if end > 0:
+                        fm = yaml.safe_load(content[3:end])
+                        if fm and 'date' in fm and 'title' in fm:
+                            # Parse the date
+                            post_date_str = fm['date']
+                            if isinstance(post_date_str, str):
+                                try:
+                                    # Parse ISO format date
+                                    post_date = datetime.strptime(post_date_str[:19], '%Y-%m-%dT%H:%M:%S')
+                                    post_date = post_date.replace(tzinfo=timezone.utc)
+                                    
+                                    # Check if it's in the future
+                                    if post_date > now:
+                                        future_posts.append({
+                                            'title': fm['title'],
+                                            'date': post_date,
+                                            'date_str': post_date.strftime('%Y-%m-%d %H:%M UTC')
+                                        })
+                                except (ValueError, IndexError):
+                                    continue
+            except Exception:
+                continue
+        
+        # Sort by date
+        future_posts.sort(key=lambda x: x['date'])
+        return future_posts
+    
     def parse_flexible_date(self, date_str):
         """Parse date from multiple formats and return ISO format"""
         date_str = date_str.strip()
@@ -243,6 +281,13 @@ class BlogPublisher:
         now = datetime.now(timezone.utc)
         default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
         human_date = now.strftime('%Y-%m-%d %H:%M UTC')
+        
+        # Show future scheduled posts if any
+        future_posts = self.get_future_scheduled_posts()
+        if future_posts:
+            print(f"  📅 Future scheduled posts:")
+            for post in future_posts[:3]:  # Show max 3
+                print(f"     - {post['date_str']}: {post['title']}")
         
         while True:
             print(f"  Example: 2026-01-15 14:30")
