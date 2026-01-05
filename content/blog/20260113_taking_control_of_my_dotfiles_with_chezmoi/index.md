@@ -115,7 +115,7 @@ If you’re still struggling with a giant `install.sh` script that breaks every 
 
 ## Sources
 
-[1] chezmoi - <https://www.chezmoi.io/>
-[2] cloonix/dotfiles - <https://github.com/cloonix/dotfiles>
-[3] gopass - <https://www.gopass.pw/>
-[4] Homebrew - <https://brew.sh/>
+[1] chezmoi - <https://www.chezmoi.io/>  
+[2] cloonix/dotfiles - <https://github.com/cloonix/dotfiles>  
+[3] gopass - <https://www.gopass.pw/>  
+[4] Homebrew - <https://brew.sh/>  
