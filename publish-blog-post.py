@@ -200,7 +200,8 @@ class BlogPublisher:
         extracted_title = self.extract_h1_title(body)
         
         # Remove first H1 heading if present (theme will render title)
-        body = re.sub(r'^\s*#\s+[^\n]+\n+', '', body, count=1)
+        # Match: optional whitespace, #, space(s), any text, optional newlines
+        body = re.sub(r'^\s*#\s+[^\n]+\n*', '', body, count=1, flags=re.MULTILINE)
         
         return front_matter, body, extracted_title
     
