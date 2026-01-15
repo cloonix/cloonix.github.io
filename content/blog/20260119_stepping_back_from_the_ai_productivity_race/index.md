@@ -11,8 +11,6 @@ tags:
 title: Stepping Back from the AI Productivity Race
 type: blog
 ---
-# Stepping Back from the AI Productivity Race
-
 In my last post [1], I discussed how 2025 was shaped by the new possibilities of AI-assisted programming. It has been a wild ride, and like many of you, I jumped headfirst into the world of "Vibe Coding." However, after several months of riding that wave, I have realized that this euphoria comes with a significant downside. I suspect many of you might feel the same.
 
 ## The Addiction of Vibe Coding
