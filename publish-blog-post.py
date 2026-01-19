@@ -14,12 +14,27 @@ Options:
 
 import sys
 import re
+import os
 import shutil
 import argparse
+import subprocess
+import tempfile
+import tty
+import termios
 from pathlib import Path
 from datetime import datetime, timezone
+from collections import Counter
 from PIL import Image
 import yaml
+
+
+# Constants
+STEP_COUNT = 4
+H1_PATTERN = r'^\s*#\s+[^\n]+\n*'
+IMAGE_PATTERN = r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)'
+FRONTMATTER_PATTERN = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
+DATE_FORMAT_ISO = "%Y-%m-%dT%H:%M:%SZ"
+DATE_FORMAT_DISPLAY = '%Y-%m-%d %H:%M UTC'
 
 
 class FrontmatterValidator:
@@ -55,7 +70,7 @@ class FrontmatterValidator:
     def ensure_complete(cls, frontmatter):
         """Add missing non-required fields with defaults"""
         if 'date' not in frontmatter:
-            frontmatter['date'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            frontmatter['date'] = datetime.now(timezone.utc).strftime(DATE_FORMAT_ISO)
         
         for field, default in cls.DEFAULTS.items():
             frontmatter.setdefault(field, default)
@@ -63,162 +78,92 @@ class FrontmatterValidator:
         return frontmatter
 
 
-class BlogPublisher:
-    def __init__(self, hugo_root, max_image_width=1920, dry_run=False, verbose=False):
-        self.hugo_root = Path(hugo_root)
-        self.max_image_width = max_image_width
-        self.dry_run = dry_run
-        self.verbose = verbose
-        
-        self.content_dir = self.hugo_root / "content" / "blog"
-        
-        if not dry_run:
-            self.content_dir.mkdir(parents=True, exist_ok=True)
+class FrontmatterParser:
+    """Handles parsing and extraction of frontmatter from markdown"""
     
-    def log(self, message, force=False):
-        """Print message if verbose or forced"""
-        if self.verbose or force:
-            print(message)
+    @staticmethod
+    def parse_frontmatter_section(content):
+        """Extract YAML frontmatter from content"""
+        if not content.startswith('---'):
+            return None
+        
+        end = content.find('---', 3)
+        if end <= 0:
+            return None
+        
+        try:
+            return yaml.safe_load(content[3:end])
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML front matter: {e}")
     
-    def extract_h1_title(self, body):
-        """Extract first H1 heading from body"""
-        match = re.match(r'^\s*#\s+(.+?)(?:\n|$)', body, re.MULTILINE)
+    @staticmethod
+    def extract_h1_title(text):
+        """Extract first H1 heading from text"""
+        match = re.match(r'^\s*#\s+(.+?)(?:\n|$)', text, re.MULTILINE)
         return match.group(1).strip() if match else None
     
-    def get_suggestions_from_existing_posts(self):
-        """Scan existing posts and return common categories/tags"""
-        from collections import Counter
-        
-        categories = Counter()
-        tags = Counter()
-        
-        # Scan all existing blog posts
-        for md_file in self.content_dir.glob('*/index.md'):
-            try:
-                content = md_file.read_text(encoding='utf-8')
-                if content.startswith('---'):
-                    end = content.find('---', 3)
-                    if end > 0:
-                        fm = yaml.safe_load(content[3:end])
-                        if fm:
-                            # Collect categories
-                            if 'categories' in fm and isinstance(fm['categories'], list):
-                                for cat in fm['categories']:
-                                    if cat:
-                                        categories[str(cat).lower()] += 1
-                            # Collect tags
-                            if 'tags' in fm and isinstance(fm['tags'], list):
-                                for tag in fm['tags']:
-                                    if tag:
-                                        tags[str(tag).lower()] += 1
-            except Exception:
-                # Skip posts that can't be parsed
-                continue
-        
-        # Return top 5 categories and top 10 tags
-        top_categories = [cat for cat, _ in categories.most_common(5)]
-        top_tags = [tag for tag, _ in tags.most_common(10)]
-        
-        return {
-            'categories': top_categories,
-            'tags': top_tags
-        }
+    @staticmethod
+    def remove_h1(text):
+        """Remove first H1 heading from text"""
+        return re.sub(H1_PATTERN, '', text, count=1)
     
-    def get_future_scheduled_posts(self):
-        """Find the last two posts and all upcoming posts (including today)"""
-        now = datetime.now(timezone.utc)
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        all_posts = []
-        
-        # Scan all existing blog posts
-        for md_file in self.content_dir.glob('*/index.md'):
-            try:
-                content = md_file.read_text(encoding='utf-8')
-                if content.startswith('---'):
-                    end = content.find('---', 3)
-                    if end > 0:
-                        fm = yaml.safe_load(content[3:end])
-                        if fm and 'date' in fm and 'title' in fm:
-                            # Parse the date
-                            post_date_str = fm['date']
-                            if isinstance(post_date_str, str):
-                                try:
-                                    # Parse ISO format date
-                                    post_date = datetime.strptime(post_date_str[:19], '%Y-%m-%dT%H:%M:%S')
-                                    post_date = post_date.replace(tzinfo=timezone.utc)
-                                    
-                                    all_posts.append({
-                                        'title': fm['title'],
-                                        'date': post_date,
-                                        'date_str': post_date.strftime('%Y-%m-%d %H:%M UTC'),
-                                        'is_future': post_date >= today_start
-                                    })
-                                except (ValueError, IndexError):
-                                    continue
-            except Exception:
-                continue
-        
-        # Sort by date
-        all_posts.sort(key=lambda x: x['date'])
-        
-        # Get last 2 past posts and all future/today posts
-        past_posts = [p for p in all_posts if not p['is_future']]
-        future_posts = [p for p in all_posts if p['is_future']]
-        
-        # Combine: last 2 past + all future
-        result = past_posts[-2:] + future_posts
-        
-        return result
-    
-    def parse_flexible_date(self, date_str):
-        """Parse date from multiple formats and return ISO format"""
-        date_str = date_str.strip()
-        
-        formats = [
-            ('%Y-%m-%dT%H:%M:%SZ', lambda d: d.strftime("%Y-%m-%dT%H:%M:%SZ")),
-            ('%Y-%m-%d', lambda d: d.strftime("%Y-%m-%dT00:00:00Z")),
-            ('%Y-%m-%d %H:%M', lambda d: d.strftime("%Y-%m-%dT%H:%M:00Z")),
-        ]
-        
-        for fmt, formatter in formats:
-            try:
-                return formatter(datetime.strptime(date_str, fmt))
-            except ValueError:
-                continue
-        
-        return None
-    
-    def parse_and_validate_front_matter(self, content):
-        """Extract and validate YAML front matter"""
-        match = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)$', content, re.DOTALL)
+    @classmethod
+    def parse(cls, content):
+        """Parse content and return (frontmatter, body, extracted_title)"""
+        match = re.match(FRONTMATTER_PATTERN, content, re.DOTALL)
         
         if not match:
-            # No frontmatter at all
-            extracted_title = self.extract_h1_title(content)
-            # Remove first H1 heading if present (theme will render title)
-            body = re.sub(r'^\s*#\s+[^\n]+\n*', '', content, count=1)
+            # No frontmatter
+            extracted_title = cls.extract_h1_title(content)
+            body = cls.remove_h1(content)
             return None, body, extracted_title
         
+        # Has frontmatter
         try:
             front_matter = yaml.safe_load(match.group(1))
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML front matter: {e}")
         
         body = match.group(2)
-        
-        # Extract H1 title before removing it
-        extracted_title = self.extract_h1_title(body)
-        
-        # Remove first H1 heading if present (theme will render title)
-        # Match: optional whitespace at start, #, space(s), any text until newline, optional extra newlines
-        body = re.sub(r'^\s*#\s+[^\n]+\n*', '', body, count=1)
+        extracted_title = cls.extract_h1_title(body)
+        body = cls.remove_h1(body)
         
         return front_matter, body, extracted_title
     
-    def _collect_text_field(self, field_name, default='', required=True, step_info=None, hint=None):
+    @staticmethod
+    def serialize(frontmatter):
+        """Convert frontmatter dict to YAML string"""
+        return yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True, indent=2)
+    
+    @staticmethod
+    def create_markdown(frontmatter, body):
+        """Create full markdown with frontmatter"""
+        yaml_str = FrontmatterParser.serialize(frontmatter)
+        return f"---\n{yaml_str}---\n{body}"
+
+
+class UserInput:
+    """Handles all user input operations"""
+    
+    @staticmethod
+    def get_single_key():
+        """Get a single keypress without Enter"""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        
+        try:
+            tty.setraw(fd)
+            char = sys.stdin.read(1).lower()
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        
+        return char
+    
+    @staticmethod
+    def text_field(field_name, default='', required=True, step_info=None, hint=None):
         """Collect a single text field with validation"""
         if step_info:
-            print(f"\n[{step_info}/{4}] {field_name}")
+            print(f"\n[{step_info}/{STEP_COUNT}] {field_name}")
         
         if hint:
             print(f"  {hint}")
@@ -238,10 +183,11 @@ class BlogPublisher:
             
             print(f"  ⚠️  {field_name} is required!")
     
-    def _collect_list_field(self, field_name, default_list=None, required=True, step_info=None, suggestions=None):
+    @staticmethod
+    def list_field(field_name, default_list=None, required=True, step_info=None, suggestions=None):
         """Collect a comma-separated list field with lowercase normalization"""
         if step_info:
-            print(f"\n[{step_info}/{4}] {field_name} (lowercase, comma-separated)")
+            print(f"\n[{step_info}/{STEP_COUNT}] {field_name} (lowercase, comma-separated)")
         
         if suggestions:
             print(f"  Suggestions: {', '.join(suggestions)}")
@@ -265,229 +211,61 @@ class BlogPublisher:
                 return []
             
             print(f"  ⚠️  At least one {field_name.lower()} is required!")
+
+
+class GitOperations:
+    """Handles git operations"""
     
-    def _collect_bool_field(self, question, default=True, step_info=None):
-        """Collect a yes/no field"""
-        if step_info:
-            print(f"\n[{step_info}/{4}] {question}")
-        
-        while True:
-            prompt = f"  {question} (y/n, default: {'y' if default else 'n'}): "
-            value = input(prompt).strip().lower()
-            
-            if not value:
-                return default
-            elif value in ['y', 'yes']:
-                return True
-            elif value in ['n', 'no']:
-                return False
-            
-            print("  ⚠️  Please enter 'y' or 'n'")
+    def __init__(self, repo_root):
+        self.repo_root = Path(repo_root)
     
-    def _collect_date_field(self, existing=None, step_info=None):
-        """Collect date field with flexible parsing"""
-        if step_info:
-            print(f"\n[{step_info}/{4}] Date")
-        
-        now = datetime.now(timezone.utc)
-        default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
-        human_date = now.strftime('%Y-%m-%d %H:%M UTC')
-        
-        # Show recent and upcoming posts
-        posts = self.get_future_scheduled_posts()
-        if posts:
-            print(f"  📅 Recent and upcoming posts:")
-            for post in posts:
-                marker = "→" if post['is_future'] else " "
-                print(f"     {marker} {post['date_str']}: {post['title']}")
-        
-        while True:
-            print(f"  Example: 2026-01-15 14:30")
-            date_input = input(f"  Press Enter for now ({human_date}), or enter date: ").strip()
-            if not date_input:
-                return default_date
-            
-            parsed_date = self.parse_flexible_date(date_input)
-            if parsed_date:
-                return parsed_date
-            
-            print("  ⚠️  Invalid date format. Try: YYYY-MM-DD HH:MM")
+    def _run(self, cmd):
+        """Run git command"""
+        return subprocess.run(
+            cmd,
+            cwd=self.repo_root,
+            capture_output=True,
+            text=True,
+            check=True
+        )
     
-    def collect_frontmatter_interactive(self, existing=None, extracted_title=None, suggestions=None):
-        """Interactively collect frontmatter from user"""
-        if suggestions is None:
-            suggestions = {'categories': [], 'tags': []}
-        
-        print("\n" + "="*60)
-        print("📝 Front Matter Collection")
-        print("="*60 + "\n")
-        
-        if existing:
-            print("Press Enter to keep existing value shown in brackets\n")
-        
-        # Determine default title (priority: existing > extracted H1 > none)
-        default_title = existing.get('title', '') if existing else (extracted_title or '')
-        hint = f"✓ Detected from H1: \"{extracted_title}\"" if extracted_title and not existing else None
-        
-        # Collect all fields
-        frontmatter = {
-            'title': self._collect_text_field('Title', default_title, required=True, step_info=1, hint=hint),
-            'date': self._collect_date_field(existing, step_info=2),
-            'categories': self._collect_list_field(
-                'Categories', 
-                existing.get('categories', []) if existing else [], 
-                required=True, 
-                step_info=3, 
-                suggestions=suggestions['categories']
-            ),
-            'tags': self._collect_list_field(
-                'Tags', 
-                existing.get('tags', []) if existing else [], 
-                required=True, 
-                step_info=4, 
-                suggestions=suggestions['tags']
-            ),
-            'type': 'blog',
-            'draft': existing.get('draft', False) if existing else False,
-        }
-        
-        return frontmatter
+    def add(self, path):
+        """Stage files"""
+        self._run(['git', 'add', path])
     
-    def show_frontmatter_review(self, frontmatter):
-        """Display frontmatter for review"""
-        print("\n" + "="*60)
-        print("📋 Front Matter Review")
-        print("="*60 + "\n")
-        
-        yaml_str = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True, indent=2)
-        print("---")
-        print(yaml_str.rstrip())
-        print("---")
-        print()
+    def has_changes(self):
+        """Check if there are staged changes"""
+        result = self._run(['git', 'status', '--porcelain'])
+        return bool(result.stdout.strip())
     
-    def confirm_proceed(self):
-        """Ask user to confirm before proceeding with single-key selection"""
-        import sys
-        import tty
-        import termios
-        
-        print("Proceed with publishing?")
-        print("  [y] yes  [q] quit  [e] edit  [p] preview")
-        print("  Press a key...", end='', flush=True)
-        
-        # Save terminal settings
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        
-        try:
-            # Set terminal to raw mode for single char input
-            tty.setraw(fd)
-            char = sys.stdin.read(1).lower()
-        finally:
-            # Restore terminal settings
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        
-        # Clear the prompt line and show selection
-        print(f"\r  → {char}                                          ")
-        
-        if char == 'y':
-            return 'yes'
-        elif char == 'q':
-            return 'no'
-        elif char == 'e':
-            return 'edit'
-        elif char == 'p':
-            return 'preview'
-        else:
-            print(f"  ⚠️  Invalid key '{char}'. Please try again.\n")
-            return self.confirm_proceed()  # Recursive retry
+    def commit(self, message):
+        """Commit staged changes"""
+        self._run(['git', 'commit', '-m', message])
     
-    def preview_with_glow(self, frontmatter, body):
-        """Preview the full content with glow"""
-        import subprocess
-        import tempfile
-        
-        # Create full content with frontmatter
-        front_matter_yaml = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True, indent=2)
-        full_content = f"---\n{front_matter_yaml}---\n{body}"
-        
-        # Write to temp file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as tmp:
-            tmp.write(full_content)
-            tmp_path = tmp.name
-        
-        try:
-            # Check if glow is available
-            result = subprocess.run(['which', 'glow'], capture_output=True, text=True)
-            if result.returncode != 0:
-                print("\n⚠️  'glow' not found. Install it with: brew install glow")
-                print("\nShowing raw content instead:\n")
-                print(full_content)
-                input("\nPress Enter to continue...")
-                return
-            
-            # Run glow with pager
-            subprocess.run(['glow', '-p', tmp_path])
-        finally:
-            # Clean up temp file
-            import os
-            try:
-                os.unlink(tmp_path)
-            except:
-                pass
+    def push(self):
+        """Push to remote"""
+        self._run(['git', 'push'])
     
-    def git_commit_and_push(self, post_slug, title):
-        """Commit and push the blog post to git"""
-        import subprocess
-        
+    def commit_and_push(self, post_slug, title):
+        """Commit and push blog post"""
         print(f"\n{'='*60}")
         print("📦 Committing and pushing to git...")
         print(f"{'='*60}\n")
         
         try:
-            # Add the blog post directory
-            result = subprocess.run(
-                ['git', 'add', f'content/blog/{post_slug}/'],
-                cwd=self.hugo_root,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.log(f"✓ Staged content/blog/{post_slug}/", force=True)
+            self.add(f'content/blog/{post_slug}/')
+            print(f"✓ Staged content/blog/{post_slug}/")
             
-            # Check if there are changes to commit
-            status_result = subprocess.run(
-                ['git', 'status', '--porcelain'],
-                cwd=self.hugo_root,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
-            if not status_result.stdout.strip():
+            if not self.has_changes():
                 print(f"ℹ️  No changes to commit - post already up to date")
                 return True
             
-            # Commit with the blog post title
             commit_msg = f"Add blog post: {title}"
-            result = subprocess.run(
-                ['git', 'commit', '-m', commit_msg],
-                cwd=self.hugo_root,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.log(f"✓ Committed: {commit_msg}", force=True)
+            self.commit(commit_msg)
+            print(f"✓ Committed: {commit_msg}")
             
-            # Push to remote
-            result = subprocess.run(
-                ['git', 'push'],
-                cwd=self.hugo_root,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.log(f"✓ Pushed to remote", force=True)
+            self.push()
+            print(f"✓ Pushed to remote")
             
             print(f"\n✅ Successfully published and pushed!")
             return True
@@ -501,15 +279,232 @@ class BlogPublisher:
             print(f"     git commit -m 'Add blog post: {title}'")
             print(f"     git push")
             return False
+
+
+class BlogPublisher:
+    """Main blog publisher class"""
     
-    def generate_filename(self, title, date_str):
-        """Generate Hugo filename: YYYYMMDD_slug.md"""
-        # Parse the date string to extract YYYYMMDD
-        # date_str is in format: YYYY-MM-DDTHH:MM:SSZ
-        date_prefix = date_str[:10].replace('-', '')  # Extract YYYYMMDD
+    def __init__(self, hugo_root, max_image_width=1920, dry_run=False, verbose=False):
+        self.hugo_root = Path(hugo_root)
+        self.max_image_width = max_image_width
+        self.dry_run = dry_run
+        self.verbose = verbose
+        
+        self.content_dir = self.hugo_root / "content" / "blog"
+        self.git = GitOperations(hugo_root)
+        
+        if not dry_run:
+            self.content_dir.mkdir(parents=True, exist_ok=True)
+    
+    def log(self, message, force=False):
+        """Print message if verbose or forced"""
+        if self.verbose or force:
+            print(message)
+    
+    def get_post_suggestions(self):
+        """Scan existing posts and return common categories/tags and scheduled posts"""
+        categories = Counter()
+        tags = Counter()
+        all_posts = []
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        for md_file in self.content_dir.glob('*/index.md'):
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                fm = FrontmatterParser.parse_frontmatter_section(content)
+                
+                if not fm:
+                    continue
+                
+                # Collect categories and tags
+                if 'categories' in fm and isinstance(fm['categories'], list):
+                    for cat in fm['categories']:
+                        if cat:
+                            categories[str(cat).lower()] += 1
+                
+                if 'tags' in fm and isinstance(fm['tags'], list):
+                    for tag in fm['tags']:
+                        if tag:
+                            tags[str(tag).lower()] += 1
+                
+                # Collect post dates
+                if 'date' in fm and 'title' in fm and isinstance(fm['date'], str):
+                    try:
+                        post_date = datetime.strptime(fm['date'][:19], '%Y-%m-%dT%H:%M:%S')
+                        post_date = post_date.replace(tzinfo=timezone.utc)
+                        
+                        all_posts.append({
+                            'title': fm['title'],
+                            'date': post_date,
+                            'date_str': post_date.strftime(DATE_FORMAT_DISPLAY),
+                            'is_future': post_date >= today_start
+                        })
+                    except (ValueError, IndexError):
+                        pass
+            except Exception:
+                continue
+        
+        # Sort posts and get last 2 past + all future
+        all_posts.sort(key=lambda x: x['date'])
+        past_posts = [p for p in all_posts if not p['is_future']]
+        future_posts = [p for p in all_posts if p['is_future']]
+        recent_posts = past_posts[-2:] + future_posts
+        
+        return {
+            'categories': [cat for cat, _ in categories.most_common(5)],
+            'tags': [tag for tag, _ in tags.most_common(10)],
+            'posts': recent_posts
+        }
+    
+    def parse_date(self, date_str):
+        """Parse date from multiple formats and return ISO format"""
+        date_str = date_str.strip()
+        
+        formats = [
+            ('%Y-%m-%dT%H:%M:%SZ', lambda d: d.strftime(DATE_FORMAT_ISO)),
+            ('%Y-%m-%d', lambda d: d.strftime("%Y-%m-%dT00:00:00Z")),
+            ('%Y-%m-%d %H:%M', lambda d: d.strftime("%Y-%m-%dT%H:%M:00Z")),
+        ]
+        
+        for fmt, formatter in formats:
+            try:
+                return formatter(datetime.strptime(date_str, fmt))
+            except ValueError:
+                continue
+        
+        return None
+    
+    def collect_date(self, existing=None, step_info=None, recent_posts=None):
+        """Collect date field with flexible parsing"""
+        if step_info:
+            print(f"\n[{step_info}/{STEP_COUNT}] Date")
+        
+        now = datetime.now(timezone.utc)
+        default_date = existing.get('date', now.strftime(DATE_FORMAT_ISO)) if existing else now.strftime(DATE_FORMAT_ISO)
+        human_date = now.strftime(DATE_FORMAT_DISPLAY)
+        
+        # Show recent and upcoming posts
+        if recent_posts:
+            print(f"  📅 Recent and upcoming posts:")
+            for post in recent_posts:
+                marker = "→" if post['is_future'] else " "
+                print(f"     {marker} {post['date_str']}: {post['title']}")
+        
+        while True:
+            print(f"  Example: 2026-01-15 14:30")
+            date_input = input(f"  Press Enter for now ({human_date}), or enter date: ").strip()
+            if not date_input:
+                return default_date
+            
+            parsed_date = self.parse_date(date_input)
+            if parsed_date:
+                return parsed_date
+            
+            print("  ⚠️  Invalid date format. Try: YYYY-MM-DD HH:MM")
+    
+    def collect_frontmatter(self, existing=None, extracted_title=None, suggestions=None):
+        """Interactively collect frontmatter from user"""
+        if suggestions is None:
+            suggestions = {'categories': [], 'tags': [], 'posts': []}
+        
+        print("\n" + "="*60)
+        print("📝 Front Matter Collection")
+        print("="*60 + "\n")
+        
+        if existing:
+            print("Press Enter to keep existing value shown in brackets\n")
+        
+        default_title = existing.get('title', '') if existing else (extracted_title or '')
+        hint = f"✓ Detected from H1: \"{extracted_title}\"" if extracted_title and not existing else None
+        
+        frontmatter = {
+            'title': UserInput.text_field('Title', default_title, required=True, step_info=1, hint=hint),
+            'date': self.collect_date(existing, step_info=2, recent_posts=suggestions.get('posts')),
+            'categories': UserInput.list_field(
+                'Categories',
+                existing.get('categories', []) if existing else [],
+                required=True,
+                step_info=3,
+                suggestions=suggestions.get('categories')
+            ),
+            'tags': UserInput.list_field(
+                'Tags',
+                existing.get('tags', []) if existing else [],
+                required=True,
+                step_info=4,
+                suggestions=suggestions.get('tags')
+            ),
+            'type': 'blog',
+            'draft': existing.get('draft', False) if existing else False,
+        }
+        
+        return frontmatter
+    
+    def show_frontmatter(self, frontmatter):
+        """Display frontmatter for review"""
+        print("\n" + "="*60)
+        print("📋 Front Matter Review")
+        print("="*60 + "\n")
+        
+        yaml_str = FrontmatterParser.serialize(frontmatter)
+        print("---")
+        print(yaml_str.rstrip())
+        print("---")
+        print()
+    
+    def confirm_action(self):
+        """Ask user to confirm with single-key selection"""
+        print("Proceed with publishing?")
+        print("  [y] yes  [q] quit  [e] edit  [p] preview")
+        print("  Press a key...", end='', flush=True)
+        
+        char = UserInput.get_single_key()
+        print(f"\r  → {char}                                          ")
+        
+        actions = {
+            'y': 'yes',
+            'q': 'no',
+            'e': 'edit',
+            'p': 'preview'
+        }
+        
+        if char in actions:
+            return actions[char]
+        
+        print(f"  ⚠️  Invalid key '{char}'. Please try again.\n")
+        return self.confirm_action()
+    
+    def preview_content(self, frontmatter, body):
+        """Preview the full content with glow"""
+        full_content = FrontmatterParser.create_markdown(frontmatter, body)
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as tmp:
+            tmp.write(full_content)
+            tmp_path = tmp.name
+        
+        try:
+            result = subprocess.run(['which', 'glow'], capture_output=True, text=True)
+            if result.returncode != 0:
+                print("\n⚠️  'glow' not found. Install it with: brew install glow")
+                print("\nShowing raw content instead:\n")
+                print(full_content)
+                input("\nPress Enter to continue...")
+                return
+            
+            subprocess.run(['glow', '-p', tmp_path])
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+    
+    def generate_slug(self, title, date_str):
+        """Generate Hugo slug: YYYYMMDD_slug"""
+        date_prefix = date_str[:10].replace('-', '')
         slug = re.sub(r'[^\w\s-]', '', title.lower())
         slug = re.sub(r'[-\s]+', '_', slug).strip('_')
-        return f"{date_prefix}_{slug}.md"
+        return f"{date_prefix}_{slug}"
     
     def optimize_image(self, source, dest):
         """Resize and optimize image"""
@@ -534,12 +529,11 @@ class BlogPublisher:
             print(f"⚠️  Warning: Could not optimize {source.name}: {e}")
             shutil.copy2(source, dest)
     
-    def find_image_path(self, draft_dir, img_path, is_in_published):
+    def find_image(self, draft_dir, img_path, is_in_published):
         """Find image file, checking multiple locations if needed"""
         source = (draft_dir / img_path.strip()).resolve()
         
         if not source.exists() and is_in_published:
-            # Check parent directory for images
             source_parent = (draft_dir.parent / img_path.strip()).resolve()
             if source_parent.exists():
                 return source_parent
@@ -548,11 +542,7 @@ class BlogPublisher:
     
     def process_images(self, draft_dir, body, post_slug, post_bundle_dir, is_in_published):
         """Process all images: find, optimize, rename, update references"""
-        # Images go in the same folder as index.md (page bundle)
-        post_image_dir = post_bundle_dir
-        
-        # Find all image references
-        images_found = re.findall(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)', body)
+        images_found = re.findall(IMAGE_PATTERN, body)
         if not images_found:
             return body, 0, []
         
@@ -567,20 +557,16 @@ class BlogPublisher:
                 self.log(f"  Skipping: {img_path}")
                 continue
             
-            # Find source image
-            source = self.find_image_path(draft_dir, img_path, is_in_published)
+            source = self.find_image(draft_dir, img_path, is_in_published)
             if not source:
                 print(f"⚠️  Warning: Image not found: {img_path}")
                 continue
             
-            # Generate clean filename
             ext = source.suffix
             clean_name = f"{post_slug}-{counter:02d}{ext}"
-            dest = post_image_dir / clean_name
-            dest_url = clean_name  # Relative path for page bundles
+            dest = post_bundle_dir / clean_name
             counter += 1
             
-            # Show/process image
             if self.dry_run:
                 print(f"  📷 {source.name} → {clean_name}")
                 print(f"     {source} → {dest}")
@@ -597,28 +583,75 @@ class BlogPublisher:
                 self.log(f"  {source.name} → {clean_name}")
                 self.optimize_image(source, dest)
             
-            # Update markdown references
             old_ref = f"![{alt_text}]({img_path})"
-            new_ref = f"![{alt_text}]({dest_url})"
+            new_ref = f"![{alt_text}]({clean_name})"
             updated_body = updated_body.replace(old_ref, new_ref)
             
             image_renames.append({'old_path': img_path, 'new_name': clean_name, 'alt_text': alt_text})
         
-        if image_renames and not self.dry_run:
-            self.log(f"✓ Processed {len(image_renames)} images → {post_slug}/", force=True)
-        elif image_renames and self.dry_run:
-            print(f"[DRY RUN] Would process {len(image_renames)} images → {post_slug}/")
+        if image_renames:
+            msg = f"[DRY RUN] Would process" if self.dry_run else "✓ Processed"
+            self.log(f"{msg} {len(image_renames)} images → {post_slug}/", force=True)
         
         return updated_body, len(image_renames), image_renames
     
-    def update_source_markdown(self, content, image_renames):
-        """Update markdown with cleaned image names for source file (relative paths)"""
+    def update_image_refs(self, content, image_renames):
+        """Update markdown with cleaned image names"""
         updated = content
         for img in image_renames:
             old_ref = f"![{img['alt_text']}]({img['old_path']})"
-            new_ref = f"![{img['alt_text']}]({img['new_name']})"  # Relative to bundle root
+            new_ref = f"![{img['alt_text']}]({img['new_name']})"
             updated = updated.replace(old_ref, new_ref)
         return updated
+    
+    def handle_source_file(self, draft_path, post_slug, content, image_renames, is_already_published):
+        """Handle source file in published folder"""
+        if is_already_published:
+            published_bundle = draft_path.parent
+            published_index = draft_path
+        else:
+            published_base = draft_path.parent / "published"
+            published_bundle = published_base / post_slug
+            published_index = published_bundle / "index.md"
+        
+        if not self.dry_run:
+            if not is_already_published:
+                # First time publishing
+                published_bundle.mkdir(parents=True, exist_ok=True)
+                source_markdown = self.update_image_refs(content, image_renames)
+                published_index.write_text(source_markdown, encoding='utf-8')
+                draft_path.unlink()
+                self.log(f"✓ Moved to bundle: {draft_path.name} → {post_slug}/index.md", force=True)
+                
+                # Move images from assets/ to bundle folder
+                if image_renames:
+                    assets_dir = draft_path.parent.parent / "assets"
+                    for img in image_renames:
+                        old_img = assets_dir / Path(img['old_path']).name
+                        if old_img.exists():
+                            new_img = published_bundle / img['new_name']
+                            old_img.replace(new_img)
+                    
+                    if assets_dir.exists() and not list(assets_dir.iterdir()):
+                        assets_dir.rmdir()
+                    self.log(f"✓ Moved {len(image_renames)} images to {post_slug}/", force=True)
+            else:
+                # Re-publishing
+                source_markdown = self.update_image_refs(content, image_renames)
+                published_index.write_text(source_markdown, encoding='utf-8')
+                
+                if image_renames:
+                    for img in image_renames:
+                        old_img = draft_path.parent / Path(img['old_path']).name
+                        new_img = published_bundle / img['new_name']
+                        if old_img.exists() and old_img != new_img:
+                            old_img.replace(new_img)
+                    self.log(f"✓ Renamed {len(image_renames)} images in bundle", force=True)
+                
+                self.log(f"✓ File already in published/ - regenerated output files", force=True)
+        else:
+            if not is_already_published:
+                self.log(f"[DRY RUN] Would create bundle: {published_bundle}/", force=True)
     
     def publish(self, draft_path):
         """Main publishing workflow"""
@@ -633,112 +666,118 @@ class BlogPublisher:
         self.log(f"Publishing: {draft_path.name}", force=True)
         self.log(f"{'='*60}\n", force=True)
         
-        # Read and parse
+        # Parse content
         content = draft_path.read_text(encoding='utf-8')
-        front_matter, body, extracted_title = self.parse_and_validate_front_matter(content)
+        front_matter, body, extracted_title = FrontmatterParser.parse(content)
         
-        # Get suggestions for categories and tags
-        suggestions = self.get_suggestions_from_existing_posts()
+        # Get suggestions
+        suggestions = self.get_post_suggestions()
         
-        # Check if frontmatter is missing or incomplete
-        needs_interactive = False
-        if front_matter is None:
-            needs_interactive = True
-            self.log("ℹ️  No front matter found - will collect interactively", force=True)
-        else:
-            # Validate frontmatter using validator class
-            is_valid, missing_fields = FrontmatterValidator.validate(front_matter)
-            
-            if not is_valid:
-                needs_interactive = True
-                self.log(f"ℹ️  Missing/invalid fields: {', '.join(missing_fields)}", force=True)
-            else:
-                # All required fields present - offer streamlined mode
-                if not self.dry_run:
-                    self.log("✓ Front matter validated", force=True)
-                    self.show_frontmatter_review(front_matter)
-                    response = input("\nKeep existing frontmatter? (y/n, default: yes): ").strip().lower()
-                    if response in ['n', 'no']:
-                        needs_interactive = True
-                        self.log("\nℹ️  Entering interactive mode to edit frontmatter", force=True)
-                    else:
-                        self.log("✓ Using existing frontmatter", force=True)
-                else:
-                    self.log("✓ Front matter validated", force=True)
+        # Determine if we need interactive input
+        needs_interactive = self._needs_interactive_input(front_matter)
         
-        # Collect frontmatter interactively if needed
+        # Collect or validate frontmatter
         if needs_interactive:
             if self.dry_run:
-                print("\n⚠️  Cannot collect frontmatter interactively in dry-run mode")
-                print("   Please add frontmatter manually or run without --dry-run")
                 raise ValueError("Missing frontmatter in dry-run mode")
             
-            front_matter = self.collect_frontmatter_interactive(
+            front_matter = self.collect_frontmatter(
                 existing=front_matter,
                 extracted_title=extracted_title,
                 suggestions=suggestions
             )
             
-            # Update the content with new frontmatter
-            content = f"---\n{yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, indent=2)}---\n{body}"
-            
-            # Write back to source file
+            # Write frontmatter back to source
+            content = FrontmatterParser.create_markdown(front_matter, body)
             draft_path.write_text(content, encoding='utf-8')
             self.log(f"✓ Added frontmatter to {draft_path.name}", force=True)
-        
-        # Ensure frontmatter is complete (should always be at this point)
-        if front_matter is None:
-            raise ValueError("Front matter is still None - this should not happen")
-        
-        # Ensure date, type, and draft fields are set using validator
-        if not needs_interactive:
+        else:
             front_matter = FrontmatterValidator.ensure_complete(front_matter)
         
-        # Show review and confirm (with edit/preview loop)
+        # Review and confirm loop
+        front_matter = self._review_and_confirm_loop(front_matter, body, extracted_title, suggestions)
+        
+        # Generate and publish
+        post_slug = self.generate_slug(front_matter['title'], front_matter['date'])
+        self._publish_content(draft_path, post_slug, front_matter, body, content)
+        
+        # Git operations
+        if not self.dry_run:
+            self.git.commit_and_push(post_slug, front_matter['title'])
+            
+            print(f"\n{'='*60}")
+            print("Next steps:")
+            print(f"  1. Preview: hugo server -D")
+            print(f"  2. Visit: http://localhost:1313/")
+            print(f"{'='*60}")
+    
+    def _needs_interactive_input(self, front_matter):
+        """Check if interactive frontmatter collection is needed"""
+        if front_matter is None:
+            self.log("ℹ️  No front matter found - will collect interactively", force=True)
+            return True
+        
+        is_valid, missing_fields = FrontmatterValidator.validate(front_matter)
+        
+        if not is_valid:
+            self.log(f"ℹ️  Missing/invalid fields: {', '.join(missing_fields)}", force=True)
+            return True
+        
+        if not self.dry_run:
+            self.log("✓ Front matter validated", force=True)
+            self.show_frontmatter(front_matter)
+            response = input("\nKeep existing frontmatter? (y/n, default: yes): ").strip().lower()
+            if response in ['n', 'no']:
+                self.log("\nℹ️  Entering interactive mode to edit frontmatter", force=True)
+                return True
+            self.log("✓ Using existing frontmatter", force=True)
+        else:
+            self.log("✓ Front matter validated", force=True)
+        
+        return False
+    
+    def _review_and_confirm_loop(self, front_matter, body, extracted_title, suggestions):
+        """Handle review and confirmation with edit/preview options"""
         while True:
-            self.show_frontmatter_review(front_matter)
+            self.show_frontmatter(front_matter)
             if self.dry_run:
                 break
             
-            response = self.confirm_proceed()
+            response = self.confirm_action()
             if response == 'yes':
                 break
             elif response == 'no':
                 print("\n❌ Publishing cancelled by user")
                 sys.exit(0)
             elif response == 'edit':
-                # Re-collect all frontmatter with existing values as defaults
-                front_matter = self.collect_frontmatter_interactive(
+                front_matter = self.collect_frontmatter(
                     existing=front_matter,
                     extracted_title=extracted_title,
                     suggestions=suggestions
                 )
-                # Ensure type is always blog
                 front_matter['type'] = 'blog'
             elif response == 'preview':
-                # Show full content with glow
-                self.preview_with_glow(front_matter, body)
+                self.preview_content(front_matter, body)
         
-        # Generate filename
-        filename = self.generate_filename(front_matter['title'], front_matter['date'])
-        post_slug = filename[:-3]
+        return front_matter
+    
+    def _publish_content(self, draft_path, post_slug, front_matter, body, original_content):
+        """Publish content to Hugo and handle source files"""
         self.log(f"✓ Generated bundle: {post_slug}/", force=True)
         
-        # Create page bundle directory
+        # Create bundle
         post_bundle_dir = self.content_dir / post_slug
         if not self.dry_run:
             post_bundle_dir.mkdir(parents=True, exist_ok=True)
         
         # Process images
         is_already_published = "published" in draft_path.parts
-        draft_dir = draft_path.parent
         updated_body, image_count, image_renames = self.process_images(
-            draft_dir, body, post_slug, post_bundle_dir, is_already_published
+            draft_path.parent, body, post_slug, post_bundle_dir, is_already_published
         )
         
-        # Write Hugo content as index.md in bundle
-        front_matter_yaml = yaml.dump(front_matter, default_flow_style=False, allow_unicode=True, indent=2)
-        hugo_content = f"---\n{front_matter_yaml}---\n{updated_body}"
+        # Write Hugo content
+        hugo_content = FrontmatterParser.create_markdown(front_matter, updated_body)
         
         if not self.dry_run:
             (post_bundle_dir / "index.md").write_text(hugo_content, encoding='utf-8')
@@ -746,58 +785,14 @@ class BlogPublisher:
         else:
             self.log(f"[DRY RUN] Would create: content/blog/{post_slug}/index.md", force=True)
         
-        # Handle source file in published folder (mirror bundle structure)
-        if is_already_published:
-            # Already in published folder, use current structure
-            published_bundle = draft_path.parent
-            published_index = draft_path
-        else:
-            # Not in published folder yet, create path
-            published_base = draft_path.parent / "published"
-            published_bundle = published_base / post_slug
-            published_index = published_bundle / "index.md"
-        
-        if not is_already_published:
-            # First time publishing
-            if not self.dry_run:
-                published_bundle.mkdir(parents=True, exist_ok=True)
-                source_markdown = self.update_source_markdown(content, image_renames)
-                published_index.write_text(source_markdown, encoding='utf-8')
-                draft_path.unlink()
-                self.log(f"✓ Moved to bundle: {draft_path.name} → {post_slug}/index.md", force=True)
-                
-                # Move images from assets/ to bundle folder
-                if image_renames:
-                    assets_dir = draft_dir / "assets"
-                    for img in image_renames:
-                        old_img = assets_dir / Path(img['old_path']).name
-                        if old_img.exists():
-                            new_img = published_bundle / img['new_name']
-                            old_img.replace(new_img)
-                    # Cleanup empty assets dir
-                    if assets_dir.exists() and not list(assets_dir.iterdir()):
-                        assets_dir.rmdir()
-                    self.log(f"✓ Moved {len(image_renames)} images to {post_slug}/", force=True)
-            else:
-                self.log(f"[DRY RUN] Would create bundle: {published_bundle}/", force=True)
-        else:
-            # Re-publishing
-            if not self.dry_run:
-                source_markdown = self.update_source_markdown(content, image_renames)
-                published_index.write_text(source_markdown, encoding='utf-8')
-                
-                # Handle images in bundle
-                if image_renames:
-                    for img in image_renames:
-                        old_img = draft_path.parent / Path(img['old_path']).name
-                        new_img = published_bundle / img['new_name']
-                        if old_img.exists() and old_img != new_img:
-                            old_img.replace(new_img)
-                    self.log(f"✓ Renamed {len(image_renames)} images in bundle", force=True)
-            
-            self.log(f"✓ File already in published/ - regenerated output files", force=True)
+        # Handle source file
+        self.handle_source_file(draft_path, post_slug, original_content, image_renames, is_already_published)
         
         # Summary
+        self._print_summary(post_slug, image_count)
+    
+    def _print_summary(self, post_slug, image_count):
+        """Print publishing summary"""
         self.log(f"\n{'='*60}", force=True)
         if self.dry_run:
             print("🔍 DRY RUN SUMMARY - No files were changed")
@@ -811,15 +806,6 @@ class BlogPublisher:
         else:
             self.log("✅ Publishing complete!", force=True)
             self.log(f"{'='*60}\n", force=True)
-            
-            # Git commit and push
-            self.git_commit_and_push(post_slug, front_matter['title'])
-            
-            print(f"\n{'='*60}")
-            print("Next steps:")
-            print(f"  1. Preview: hugo server -D")
-            print(f"  2. Visit: http://localhost:1313/")
-            print(f"{'='*60}")
 
 
 def main():
