@@ -41,6 +41,6 @@ If a tool doesn't buy back my time or simplify my life, I am learning to let it 
 
 ## Sources
 
-[1] My Personal AI Recap of 2025 – Part 1 - <https://blog.cmmx.de/2025/12/22/my-personal-ai-recap-of-2025-part-1/>  
-[2] Building a Service Hub: One Tool, Three Ways to Use It - <https://blog.cmmx.de/2026/01/03/building-a-service-hub-one-tool-three-ways-to-use-it/>  
-[3] My Hugo Workflow: From Markdown to Live Post - <https://blog.cmmx.de/2026/01/06/my-hugo-workflow-from-markdown-to-live-post/>
+[1] [My Personal AI Recap of 2025 – Part 1](https://blog.cmmx.de/2025/12/22/my-personal-ai-recap-of-2025-part-1)   
+[2] [Building a Service Hub: One Tool, Three Ways to Use It](https://blog.cmmx.de/2026/01/03/building-a-service-hub-one-tool-three-ways-to-use-it/)  
+[3] [My Hugo Workflow: From Markdown to Live Post](https://blog.cmmx.de/2026/01/06/my-hugo-workflow-from-markdown-to-live-post/)
