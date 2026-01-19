@@ -436,6 +436,59 @@ class BlogPublisher:
             except:
                 pass
     
+    def git_commit_and_push(self, post_slug, title):
+        """Commit and push the blog post to git"""
+        import subprocess
+        
+        print(f"\n{'='*60}")
+        print("📦 Committing and pushing to git...")
+        print(f"{'='*60}\n")
+        
+        try:
+            # Add the blog post directory
+            result = subprocess.run(
+                ['git', 'add', f'content/blog/{post_slug}/'],
+                cwd=self.hugo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            self.log(f"✓ Staged content/blog/{post_slug}/", force=True)
+            
+            # Commit with the blog post title
+            commit_msg = f"Add blog post: {title}"
+            result = subprocess.run(
+                ['git', 'commit', '-m', commit_msg],
+                cwd=self.hugo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            self.log(f"✓ Committed: {commit_msg}", force=True)
+            
+            # Push to remote
+            result = subprocess.run(
+                ['git', 'push'],
+                cwd=self.hugo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            self.log(f"✓ Pushed to remote", force=True)
+            
+            print(f"\n✅ Successfully published and pushed!")
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"\n⚠️  Git operation failed: {e}")
+            if e.stderr:
+                print(f"   {e.stderr.strip()}")
+            print(f"\n   You can manually commit and push with:")
+            print(f"     git add content/blog/{post_slug}/")
+            print(f"     git commit -m 'Add blog post: {title}'")
+            print(f"     git push")
+            return False
+    
     def generate_filename(self, title, date_str):
         """Generate Hugo filename: YYYYMMDD_slug.md"""
         # Parse the date string to extract YYYYMMDD
@@ -745,13 +798,15 @@ class BlogPublisher:
         else:
             self.log("✅ Publishing complete!", force=True)
             self.log(f"{'='*60}\n", force=True)
-            self.log("Next steps:", force=True)
-            self.log(f"  1. Preview: hugo server -D", force=True)
-            self.log(f"  2. Visit: http://localhost:1313/", force=True)
-            self.log(f"  3. Commit and push when ready:", force=True)
-            self.log(f"     git add content/blog/{post_slug}/", force=True)
-            self.log(f"     git commit -m 'Add blog post: {front_matter['title']}'", force=True)
-            self.log(f"     git push", force=True)
+            
+            # Git commit and push
+            self.git_commit_and_push(post_slug, front_matter['title'])
+            
+            print(f"\n{'='*60}")
+            print("Next steps:")
+            print(f"  1. Preview: hugo server -D")
+            print(f"  2. Visit: http://localhost:1313/")
+            print(f"{'='*60}")
 
 
 def main():
