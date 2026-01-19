@@ -125,9 +125,10 @@ class BlogPublisher:
         }
     
     def get_future_scheduled_posts(self):
-        """Find posts scheduled in the future"""
+        """Find the last two posts and all upcoming posts (including today)"""
         now = datetime.now(timezone.utc)
-        future_posts = []
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        all_posts = []
         
         # Scan all existing blog posts
         for md_file in self.content_dir.glob('*/index.md'):
@@ -146,21 +147,28 @@ class BlogPublisher:
                                     post_date = datetime.strptime(post_date_str[:19], '%Y-%m-%dT%H:%M:%S')
                                     post_date = post_date.replace(tzinfo=timezone.utc)
                                     
-                                    # Check if it's in the future
-                                    if post_date > now:
-                                        future_posts.append({
-                                            'title': fm['title'],
-                                            'date': post_date,
-                                            'date_str': post_date.strftime('%Y-%m-%d %H:%M UTC')
-                                        })
+                                    all_posts.append({
+                                        'title': fm['title'],
+                                        'date': post_date,
+                                        'date_str': post_date.strftime('%Y-%m-%d %H:%M UTC'),
+                                        'is_future': post_date >= today_start
+                                    })
                                 except (ValueError, IndexError):
                                     continue
             except Exception:
                 continue
         
         # Sort by date
-        future_posts.sort(key=lambda x: x['date'])
-        return future_posts
+        all_posts.sort(key=lambda x: x['date'])
+        
+        # Get last 2 past posts and all future/today posts
+        past_posts = [p for p in all_posts if not p['is_future']]
+        future_posts = [p for p in all_posts if p['is_future']]
+        
+        # Combine: last 2 past + all future
+        result = past_posts[-2:] + future_posts
+        
+        return result
     
     def parse_flexible_date(self, date_str):
         """Parse date from multiple formats and return ISO format"""
@@ -187,7 +195,9 @@ class BlogPublisher:
         if not match:
             # No frontmatter at all
             extracted_title = self.extract_h1_title(content)
-            return None, content, extracted_title
+            # Remove first H1 heading if present (theme will render title)
+            body = re.sub(r'^\s*#\s+[^\n]+\n*', '', content, count=1)
+            return None, body, extracted_title
         
         try:
             front_matter = yaml.safe_load(match.group(1))
@@ -200,15 +210,15 @@ class BlogPublisher:
         extracted_title = self.extract_h1_title(body)
         
         # Remove first H1 heading if present (theme will render title)
-        # Match: optional whitespace, #, space(s), any text, optional newlines
-        body = re.sub(r'^\s*#\s+[^\n]+\n*', '', body, count=1, flags=re.MULTILINE)
+        # Match: optional whitespace at start, #, space(s), any text until newline, optional extra newlines
+        body = re.sub(r'^\s*#\s+[^\n]+\n*', '', body, count=1)
         
         return front_matter, body, extracted_title
     
     def _collect_text_field(self, field_name, default='', required=True, step_info=None, hint=None):
         """Collect a single text field with validation"""
         if step_info:
-            print(f"\n[{step_info}/{5}] {field_name}")
+            print(f"\n[{step_info}/{4}] {field_name}")
         
         if hint:
             print(f"  {hint}")
@@ -231,7 +241,7 @@ class BlogPublisher:
     def _collect_list_field(self, field_name, default_list=None, required=True, step_info=None, suggestions=None):
         """Collect a comma-separated list field with lowercase normalization"""
         if step_info:
-            print(f"\n[{step_info}/{5}] {field_name} (lowercase, comma-separated)")
+            print(f"\n[{step_info}/{4}] {field_name} (lowercase, comma-separated)")
         
         if suggestions:
             print(f"  Suggestions: {', '.join(suggestions)}")
@@ -259,7 +269,7 @@ class BlogPublisher:
     def _collect_bool_field(self, question, default=True, step_info=None):
         """Collect a yes/no field"""
         if step_info:
-            print(f"\n[{step_info}/{5}] {question}")
+            print(f"\n[{step_info}/{4}] {question}")
         
         while True:
             prompt = f"  {question} (y/n, default: {'y' if default else 'n'}): "
@@ -277,18 +287,19 @@ class BlogPublisher:
     def _collect_date_field(self, existing=None, step_info=None):
         """Collect date field with flexible parsing"""
         if step_info:
-            print(f"\n[{step_info}/{5}] Date")
+            print(f"\n[{step_info}/{4}] Date")
         
         now = datetime.now(timezone.utc)
         default_date = existing.get('date', now.strftime('%Y-%m-%dT%H:%M:%SZ')) if existing else now.strftime('%Y-%m-%dT%H:%M:%SZ')
         human_date = now.strftime('%Y-%m-%d %H:%M UTC')
         
-        # Show future scheduled posts if any
-        future_posts = self.get_future_scheduled_posts()
-        if future_posts:
-            print(f"  📅 Future scheduled posts:")
-            for post in future_posts[:3]:  # Show max 3
-                print(f"     - {post['date_str']}: {post['title']}")
+        # Show recent and upcoming posts
+        posts = self.get_future_scheduled_posts()
+        if posts:
+            print(f"  📅 Recent and upcoming posts:")
+            for post in posts:
+                marker = "→" if post['is_future'] else " "
+                print(f"     {marker} {post['date_str']}: {post['title']}")
         
         while True:
             print(f"  Example: 2026-01-15 14:30")
@@ -326,23 +337,19 @@ class BlogPublisher:
                 'Categories', 
                 existing.get('categories', []) if existing else [], 
                 required=True, 
-                step_info=4, 
+                step_info=3, 
                 suggestions=suggestions['categories']
             ),
             'tags': self._collect_list_field(
                 'Tags', 
                 existing.get('tags', []) if existing else [], 
                 required=True, 
-                step_info=5, 
+                step_info=4, 
                 suggestions=suggestions['tags']
             ),
             'type': 'blog',
+            'draft': existing.get('draft', False) if existing else False,
         }
-        
-        # Draft status (inverted logic: asking about publish, storing as draft)
-        default_publish = not existing.get('draft', False) if existing else True
-        publish_now = self._collect_bool_field('Publish immediately?', default=default_publish, step_info=3)
-        frontmatter['draft'] = not publish_now
         
         return frontmatter
     
@@ -359,16 +366,75 @@ class BlogPublisher:
         print()
     
     def confirm_proceed(self):
-        """Ask user to confirm before proceeding"""
-        while True:
-            response = input("Proceed with publishing? (yes/no/edit, default: no): ").strip().lower()
-            if response in ['yes', 'y']:
-                return 'yes'
-            elif response in ['no', 'n', '']:
-                return 'no'
-            elif response in ['edit', 'e']:
-                return 'edit'
-            print("  ⚠️  Please enter 'yes', 'no', or 'edit'")
+        """Ask user to confirm before proceeding with single-key selection"""
+        import sys
+        import tty
+        import termios
+        
+        print("Proceed with publishing?")
+        print("  [y] yes  [q] quit  [e] edit  [p] preview")
+        print("  Press a key...", end='', flush=True)
+        
+        # Save terminal settings
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        
+        try:
+            # Set terminal to raw mode for single char input
+            tty.setraw(fd)
+            char = sys.stdin.read(1).lower()
+        finally:
+            # Restore terminal settings
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        
+        # Clear the prompt line and show selection
+        print(f"\r  → {char}                                          ")
+        
+        if char == 'y':
+            return 'yes'
+        elif char == 'q':
+            return 'no'
+        elif char == 'e':
+            return 'edit'
+        elif char == 'p':
+            return 'preview'
+        else:
+            print(f"  ⚠️  Invalid key '{char}'. Please try again.\n")
+            return self.confirm_proceed()  # Recursive retry
+    
+    def preview_with_glow(self, frontmatter, body):
+        """Preview the full content with glow"""
+        import subprocess
+        import tempfile
+        
+        # Create full content with frontmatter
+        front_matter_yaml = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True, indent=2)
+        full_content = f"---\n{front_matter_yaml}---\n{body}"
+        
+        # Write to temp file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as tmp:
+            tmp.write(full_content)
+            tmp_path = tmp.name
+        
+        try:
+            # Check if glow is available
+            result = subprocess.run(['which', 'glow'], capture_output=True, text=True)
+            if result.returncode != 0:
+                print("\n⚠️  'glow' not found. Install it with: brew install glow")
+                print("\nShowing raw content instead:\n")
+                print(full_content)
+                input("\nPress Enter to continue...")
+                return
+            
+            # Run glow with pager
+            subprocess.run(['glow', '-p', tmp_path])
+        finally:
+            # Clean up temp file
+            import os
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
     
     def generate_filename(self, title, date_str):
         """Generate Hugo filename: YYYYMMDD_slug.md"""
@@ -562,7 +628,7 @@ class BlogPublisher:
         if not needs_interactive:
             front_matter = FrontmatterValidator.ensure_complete(front_matter)
         
-        # Show review and confirm (with edit loop)
+        # Show review and confirm (with edit/preview loop)
         while True:
             self.show_frontmatter_review(front_matter)
             if self.dry_run:
@@ -583,6 +649,9 @@ class BlogPublisher:
                 )
                 # Ensure type is always blog
                 front_matter['type'] = 'blog'
+            elif response == 'preview':
+                # Show full content with glow
+                self.preview_with_glow(front_matter, body)
         
         # Generate filename
         filename = self.generate_filename(front_matter['title'], front_matter['date'])
