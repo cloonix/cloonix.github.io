@@ -455,6 +455,19 @@ class BlogPublisher:
             )
             self.log(f"✓ Staged content/blog/{post_slug}/", force=True)
             
+            # Check if there are changes to commit
+            status_result = subprocess.run(
+                ['git', 'status', '--porcelain'],
+                cwd=self.hugo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            if not status_result.stdout.strip():
+                print(f"ℹ️  No changes to commit - post already up to date")
+                return True
+            
             # Commit with the blog post title
             commit_msg = f"Add blog post: {title}"
             result = subprocess.run(
