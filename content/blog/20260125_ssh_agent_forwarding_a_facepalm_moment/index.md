@@ -11,8 +11,6 @@ tags:
 title: 'SSH Agent Forwarding: A Facepalm Moment'
 type: blog
 ---
-# SSH Agent Forwarding: A Facepalm Moment
-
 I have been using SSH keys for nearly two decades. You would think I’d have the basics fully figured out by now. But recently, I had one of those "facepalm" moments where I felt a little stupid for not knowing something sooner.
 
 Here is the situation: I needed my remote servers to access private Git repositories via SSH.
