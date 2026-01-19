@@ -71,4 +71,4 @@ It’s a cleaner, more secure workflow. I just wish I had started using it a few
 
 ## References
 
-[1] GitHub Docs - Using SSH agent forwarding - <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/using-ssh-agent-forwarding>
+[1] [GitHub Docs - Using SSH agent forwarding](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/using-ssh-agent-forwarding)
