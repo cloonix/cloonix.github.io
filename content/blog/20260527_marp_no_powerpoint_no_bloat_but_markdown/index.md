@@ -14,13 +14,13 @@ I don't like PowerPoint. The endless dragging and dropping, the bloated interfac
 
 If you are like me, you probably love Markdown. It is simple, clean, and gets out of your way. Ever since I started using Obsidian, it has easily become my favorite application of all time. So, a while ago, I asked myself if I could just write my presentations in Markdown too. 
 
-That is when I discovered Marp [1](https://marp.app), an incredibly slick Markdown presentation ecosystem. 
+That is when I discovered Marp [[1](https://marp.app)], an incredibly slick Markdown presentation ecosystem. 
 
 ## What is Marp?
 
-Marp is not strictly 100 percent pure Markdown, but it feels incredibly close. It is built on top of the CommonMark [2](https://commonmark.org) specification, meaning your existing Markdown knowledge carries over instantly. 
+Marp is not strictly 100 percent pure Markdown, but it feels incredibly close. It is built on top of the CommonMark [[2](https://commonmark.org)] specification, meaning your existing Markdown knowledge carries over instantly. 
 
-The ecosystem is incredibly developer friendly. You can run it directly from your terminal using the Marp CLI [3](https://github.com/marp-team/marp-cli) or write your slides directly inside VS Code with their official extension [4](https://marketplace.visualstudio.com/items?itemName=marp-team.marp-vscode). There is even a community curated list of awesome Marp resources [5](https://github.com/marp-team/awesome-marp) if you want to dive deeper into custom tools and themes.
+The ecosystem is incredibly developer friendly. You can run it directly from your terminal using the Marp CLI [[3](https://github.com/marp-team/marp-cli)] or write your slides directly inside VS Code with their official extension [[4](https://marketplace.visualstudio.com/items?itemName=marp-team.marp-vscode)]. There is even a community curated list of awesome Marp resources [[5](https://github.com/marp-team/awesome-marp)] if you want to dive deeper into custom tools and themes.
 
 If you are on macOS, getting started is as simple as running a quick Homebrew command:
 
