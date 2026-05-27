@@ -2,14 +2,13 @@
 title: "About Me"
 date: 2024-07-15T18:30:00Z
 ---
+Claus Malter advises small and medium-sized businesses as well as private clients in and around Munich. His services include project management and software development, along with the design and implementation of technical solutions. He focuses on delivering customised, practical, and high-quality results that are easy to understand and maintain. Working as a part-time freelancer, he remains independent of both customer contracts and manufacturers.
 
-Claus Malter advises small and medium-sized companies as well as private customers in and around Munich. His range of services includes project management, design and realisation of technical solutions. His focus is on customised, comprehensible and always high-quality solutions. He works as a freelancer on a part-time basis and is therefore independent of customer orders and manufacturers.
+He began his career at Siemens as an IT specialist in systems integration before studying business administration and mechanical engineering with a technical specialisation at the Technical University of Munich.
 
-He started his career at Siemens as an IT specialist for system integration, followed by a degree in business administration and mechanical engineering as a technical specialisation at the Technical University of Munich.
+Alongside the development of tailored solutions, he also supports clients in the introduction, adaptation, and optimisation of standard software systems. His broad professional and technical background enables him to adapt quickly to new challenges and develop effective, user-oriented solutions.
 
-In addition to the development of customised solutions, he also offers support in the introduction and adaptation of standard software. His broad range of professional and technical experience makes him adaptable and always open to new questions and solutions.
-
-Thanks to this versatile training and a high level of IT affinity in his private and professional environment, he has a solution proposal for many issues that is sustainably orientated towards the needs of the target group. He is very interested in making the solution as simple as possible in order to enable his customers to adopt the solution independently, but also provides long-term on-site and remote support.
+Thanks to his interdisciplinary training and strong IT affinity in both his professional and private life, he is able to provide sustainable solutions that are closely aligned with the needs of the target group. He places particular emphasis on simplicity and usability, enabling customers to work independently with the implemented solutions whenever possible. At the same time, he also offers reliable long-term support, both on-site and remotely.
 
 ## Contact
 
